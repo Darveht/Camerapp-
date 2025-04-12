@@ -4,11 +4,13 @@
   <meta charset="UTF-8">
   <title>Cámara Profesional - Realtime Filters</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-  <!-- Iconos -->
+  <!-- Iconos Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     /* Reinicio básico */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
     body {
       height: 100vh;
       background: linear-gradient(150deg, #000, #222);
@@ -16,8 +18,12 @@
       overflow: hidden;
       position: relative;
     }
-    .camera-app { position: fixed; width: 100%; height: 100%; overflow: hidden; }
-    #camera { width: 100%; height: 100%; object-fit: cover; }
+    .camera-app {
+      position: fixed; width: 100%; height: 100%; overflow: hidden;
+    }
+    #camera {
+      width: 100%; height: 100%; object-fit: cover;
+    }
     /* Controles superiores */
     .controls-top {
       position: fixed; top: 30px; left: 20px; right: 20px;
@@ -26,8 +32,7 @@
     .controls-top button {
       background: rgba(0, 0, 0, 0.4);
       border: none; color: white; width: 48px; height: 48px; border-radius: 50%;
-      font-size: 22px;
-      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; display: flex; align-items: center; justify-content: center;
       backdrop-filter: blur(5px); box-shadow: 0 2px 10px rgba(0,0,0,0.5);
       transition: transform 0.2s ease;
     }
@@ -47,7 +52,7 @@
     .capture-button-inner {
       width: 100%; height: 100%; background: #000; border-radius: 50%;
     }
-    /* Panel de filtros (carrusel dinámico) */
+    /* Panel de filtros (carrusel) */
     .filters-panel {
       position: fixed; bottom: 120px; left: 0; right: 0; height: 90px;
       overflow-x: auto; white-space: nowrap;
@@ -84,29 +89,29 @@
   <div class="camera-app">
     <video id="camera" autoplay playsinline></video>
     <canvas id="canvas" style="display: none;"></canvas>
-    
+
     <div class="controls-top">
       <button id="switchCamera"><i class="fas fa-camera-rotate"></i></button>
       <button id="flash" class="flash-btn"><i class="fas fa-bolt"></i></button>
     </div>
-    
+
     <div class="controls-bottom">
       <button id="captureButton"><div class="capture-button-inner"></div></button>
     </div>
-    
-    <!-- Panel de filtros cargado de Firebase -->
+
+    <!-- Panel de filtros cargado dinámicamente -->
     <div class="filters-panel" id="filtersPanel">
       <div class="filters-container" id="filtersContainer">
-        <!-- Se cargarán en tiempo real los filtros definidos en Firebase -->
+        <!-- Se agregarán aquí los filtros desde Firebase -->
       </div>
     </div>
   </div>
-  
-  <!-- Firebase SDK -->
+
+  <!-- Firebase SDK (compat para facilitar la integración) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <script>
-    // Configuración de Firebase
+    // Configuración de Firebase (usa la proporcionada)
     const firebaseConfig = {
       apiKey: "AIzaSyCFQ_geG0HIv2EZ-bfKc97TJNtf2sdqPzc",
       authDomain: "clack-koder.firebaseapp.com",
@@ -119,13 +124,13 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    
-    // Variables de cámara y filtros
+
+    // Variables para la cámara y los filtros
     let currentStream;
     let currentFilterCss = 'none';
     let facingMode = 'environment';
     let flashEnabled = false;
-    
+
     async function initCamera() {
       try {
         const constraints = {
@@ -137,14 +142,16 @@
         console.error('Error al acceder a la cámara:', err);
       }
     }
-    
+
+    // Cambio entre cámaras (frontal/trasera)
     document.getElementById('switchCamera').addEventListener('click', async () => {
-      if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); }
+      if (currentStream) currentStream.getTracks().forEach(track => track.stop());
       facingMode = (facingMode === 'environment') ? 'user' : 'environment';
       await initCamera();
       document.getElementById('flash').style.display = (facingMode === 'environment') ? 'block' : 'none';
     });
-    
+
+    // Funcionalidad del flash (si es compatible)
     document.getElementById('flash').addEventListener('click', async () => {
       flashEnabled = !flashEnabled;
       document.getElementById('flash').classList.toggle('active');
@@ -159,12 +166,12 @@
         }
       }
     });
-    
-    // Función que aplica el filtro CSS seleccionado al <video>
+
+    // Función que aplica el filtro seleccionado al video
     function applyFilter() {
       document.getElementById('camera').style.filter = currentFilterCss;
     }
-    
+
     // Capturar imagen y descargar
     document.getElementById('captureButton').addEventListener('click', () => {
       const video = document.getElementById('camera');
@@ -179,42 +186,48 @@
       link.href = image;
       link.download = 'foto_' + new Date().getTime() + '.jpg';
       link.click();
-      // Efecto visual en botón de captura
+      // Efecto visual en el botón de captura
       const captureButton = document.getElementById('captureButton');
       captureButton.style.transform = 'scale(0.9)';
       setTimeout(() => { captureButton.style.transform = 'scale(1)'; }, 150);
     });
-    
-    // Renderiza un botón de filtro según los datos de Firebase
+
+    // Función para renderizar cada botón de filtro desde Firebase
     function renderFilterButton(filterId, filterData) {
       const btn = document.createElement('button');
       btn.classList.add('filter-btn');
-      btn.style.backgroundImage = `url(${filterData.preview})`;
-      btn.innerHTML = `<span>${filterData.name}</span>`;
+      if (filterData.imagen) {
+        btn.style.backgroundImage = `url(${filterData.imagen})`;
+      } else {
+        btn.style.backgroundColor = '#333';
+      }
+      btn.innerHTML = `<span>${filterData.nombre}</span>`;
       btn.addEventListener('click', () => {
+        // Remueve la clase 'active' de todos y asigna al actual
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        currentFilterCss = filterData.css;
+        currentFilterCss = filterData.css || 'none';
         applyFilter();
       });
       return btn;
     }
-    
-    // Cargar filtros desde Firebase (escucha en tiempo real)
+
+    // Función para cargar filtros desde Firebase en tiempo real (desde la ruta "filtros")
     function loadFilters() {
-      const filtersRef = db.ref('filters');
+      const filtersRef = db.ref('filtros');
       filtersRef.on('value', (snapshot) => {
         const data = snapshot.val();
         const container = document.getElementById('filtersContainer');
-        container.innerHTML = '';
+        container.innerHTML = ''; // Limpia el contenedor
         if (data) {
           Object.keys(data).forEach(filterId => {
-            container.appendChild(renderFilterButton(filterId, data[filterId]));
+            const btn = renderFilterButton(filterId, data[filterId]);
+            container.appendChild(btn);
           });
         }
       });
     }
-    
+
     window.addEventListener('load', () => {
       initCamera();
       loadFilters();
