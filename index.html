@@ -220,103 +220,27 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Barra de progreso circular estilo Twitter */
-    .circular-progress {
+    /* Indicador simple de grabación */
+    .recording-indicator {
       position: absolute;
-      top: -8px;
-      left: -8px;
-      width: 96px;
-      height: 96px;
-      opacity: 0;
-      transition: all 0.4s ease;
-      pointer-events: none;
-      transform: scale(0.8);
-    }
-
-    .circular-progress.active {
-      opacity: 1;
-      transform: scale(1);
-      animation: progressPulse 2s ease-in-out infinite alternate;
-    }
-
-    @keyframes progressPulse {
-      0% { transform: scale(1); }
-      100% { transform: scale(1.02); }
-    }
-
-    .progress-ring {
-      width: 96px;
-      height: 96px;
-      transform: rotate(-90deg);
-    }
-
-    .progress-ring-background {
-      fill: transparent;
-      stroke: rgba(255, 255, 255, 0.1);
-      stroke-width: 3;
-      stroke-dasharray: none;
-    }
-
-    .progress-ring-circle {
-      fill: transparent;
-      stroke: #1d9bf0;
-      stroke-width: 4;
-      stroke-linecap: round;
-      stroke-dasharray: 301.59;
-      stroke-dashoffset: 301.59;
-      transition: stroke-dashoffset 0.2s ease-out;
-      filter: drop-shadow(0 0 8px rgba(29, 155, 240, 0.6));
-      animation: progressGlow 1.5s ease-in-out infinite alternate;
-    }
-
-    @keyframes progressGlow {
-      0% { 
-        stroke: #1d9bf0;
-        filter: drop-shadow(0 0 8px rgba(29, 155, 240, 0.6)); 
-      }
-      100% { 
-        stroke: #00d4ff;
-        filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.8)); 
-      }
-    }
-
-    /* Efecto de agua llenándose */
-    .progress-water-effect {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 70px;
-      height: 70px;
+      top: -4px;
+      left: -4px;
+      width: 88px;
+      height: 88px;
+      border: 3px solid #ff0040;
       border-radius: 50%;
-      background: linear-gradient(45deg, rgba(29, 155, 240, 0.1), rgba(0, 212, 255, 0.2));
       opacity: 0;
       transition: opacity 0.3s ease;
     }
 
-    .circular-progress.active .progress-water-effect {
+    .recording-indicator.active {
       opacity: 1;
-      animation: waterFill 0.5s ease-out, waterWave 2s ease-in-out infinite;
+      animation: simplePulse 1.5s infinite;
     }
 
-    @keyframes waterFill {
-      0% { 
-        transform: translate(-50%, -50%) scale(0);
-        opacity: 0;
-      }
-      100% { 
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 1;
-      }
-    }
-
-    @keyframes waterWave {
-      0%, 100% { 
-        background: linear-gradient(45deg, rgba(29, 155, 240, 0.1), rgba(0, 212, 255, 0.2));
-      }
-      50% { 
-        background: linear-gradient(45deg, rgba(0, 212, 255, 0.2), rgba(29, 155, 240, 0.3));
-      }
+    @keyframes simplePulse {
+      0%, 100% { opacity: 0.7; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
     }
 
     /* Cronómetro cuenta regresiva estilo TikTok */
@@ -732,13 +656,7 @@
 
       <button id="captureButton">
         <div class="capture-inner"></div>
-        <div class="circular-progress" id="circularProgress">
-          <div class="progress-water-effect"></div>
-          <svg class="progress-ring">
-            <circle class="progress-ring-background" cx="48" cy="48" r="48"></circle>
-            <circle class="progress-ring-circle" cx="48" cy="48" r="48"></circle>
-          </svg>
-        </div>
+        <div class="recording-indicator" id="recordingIndicator"></div>
       </button>
     </div>
 
@@ -785,21 +703,20 @@
     let recordedChunks = [];
     let recordingStartTime;
     let timerInterval;
-    let progressInterval;
     let currentMode = 'photo';
     let maxRecordingTime = 60000; // 60 segundos
     let countdownTime = 0; // Tiempo de cuenta regresiva
     let backgroundMusic = null;
     let musicPlaying = false;
     let currentMusicFile = null;
+    let audioInitialized = false;
 
     // Elementos DOM
     const camera = document.getElementById('camera');
     const captureButton = document.getElementById('captureButton');
     const recordingTimer = document.getElementById('recordingTimer');
     const timerText = document.getElementById('timerText');
-    const circularProgress = document.getElementById('circularProgress');
-    const progressRingCircle = document.querySelector('.progress-ring-circle');
+    const recordingIndicator = document.getElementById('recordingIndicator');
     const flashEffect = document.getElementById('flashEffect');
     const notification = document.getElementById('notification');
     const gridOverlay = document.getElementById('gridOverlay');
@@ -809,6 +726,16 @@
     const musicFileInput = document.getElementById('musicFileInput');
     const musicInfo = document.getElementById('musicInfo');
     const musicTitle = document.getElementById('musicTitle');
+
+    // Inicializar audio para móviles
+    function initializeAudio() {
+      if (!audioInitialized) {
+        // Crear un contexto de audio y reproducir silencio para activar audio en móviles
+        const silentAudio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+P9kmUfAByP2O+tZB4AHmO50ry9jz4HFVO/4t+ZTwwOUqzc9ZRiEAABV+EYBAhRr+n5wXAHNjBWq9Hv5zoyBC2W3vfNfCQJJXvG9d2IOwcZYbfi06NQFAw=');
+        silentAudio.play().catch(() => {});
+        audioInitialized = true;
+      }
+    }
 
     // Sonidos (Web Audio API)
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -1155,31 +1082,24 @@ document.getElementById('timerToggle').addEventListener('click', () => {
     musicFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file && file.type.startsWith('audio/')) {
+        initializeAudio(); // Inicializar audio para móviles
+        
         currentMusicFile = file;
         const url = URL.createObjectURL(file);
         backgroundMusicElement.src = url;
         backgroundMusic = url;
 
-        // Animación estilo Twitter para música cargada
-        const musicUploadBtn = document.getElementById('musicUpload');
-        musicUploadBtn.style.transform = 'scale(0.8)';
-        musicUploadBtn.style.background = '#1d9bf0';
-        
-        setTimeout(() => {
-          musicUploadBtn.style.transform = 'scale(1.1)';
-          setTimeout(() => {
-            musicUploadBtn.style.transform = 'scale(1)';
-          }, 200);
-        }, 100);
+        // Configurar audio para móviles
+        backgroundMusicElement.preload = 'auto';
+        backgroundMusicElement.load();
 
+        const musicUploadBtn = document.getElementById('musicUpload');
         musicTitle.textContent = file.name.replace(/\.[^/.]+$/, "");
         document.getElementById('musicPlay').style.display = 'flex';
         musicUploadBtn.classList.add('active');
         
-        // Mostrar notificación de música estilo Twitter
+        // Mostrar notificación de música
         musicInfo.classList.add('active');
-        
-        // Auto-ocultar después de 4 segundos
         setTimeout(() => {
           musicInfo.classList.remove('active');
         }, 4000);
@@ -1339,39 +1259,32 @@ document.getElementById('timerToggle').addEventListener('click', () => {
 
       captureButton.classList.add('recording');
       recordingTimer.classList.add('active');
-      circularProgress.classList.add('active');
+      recordingIndicator.classList.add('active');
 
-      // Auto-iniciar música si hay una cargada y asegurar reproducción
+      // Inicializar y reproducir música para móviles
       if (backgroundMusic && backgroundMusicElement.src) {
-        // Siempre reiniciar la música desde el inicio
-        backgroundMusicElement.currentTime = 0;
-        backgroundMusicElement.volume = 0.6; // Volumen moderado
+        initializeAudio(); // Asegurar que el audio esté inicializado
         
-        // Intentar reproducir la música
-        const playPromise = backgroundMusicElement.play();
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            musicPlaying = true;
-            document.getElementById('musicPlay').innerHTML = '<i class="fas fa-pause"></i>';
-            
-            // Mostrar info de música con animación
-            musicInfo.classList.add('active');
-            setTimeout(() => {
-              musicInfo.classList.remove('active');
-            }, 3000);
-            
-            showNotification('🎵 Grabando con música');
-            console.log('Música iniciada correctamente durante grabación');
-          }).catch((err) => {
-            console.error('Error al reproducir música durante grabación:', err);
-            showNotification('⚠️ Grabando sin música (error de reproducción)');
-          });
-        } else {
-          console.log('Play promise undefined');
-          showNotification('📹 Grabando video');
-        }
+        backgroundMusicElement.currentTime = 0;
+        backgroundMusicElement.volume = 0.7;
+        backgroundMusicElement.muted = false;
+        
+        // Método más robusto para móviles
+        backgroundMusicElement.play().then(() => {
+          musicPlaying = true;
+          document.getElementById('musicPlay').innerHTML = '<i class="fas fa-pause"></i>';
+          showNotification('🎵 Grabando con música');
+          console.log('Música iniciada correctamente');
+        }).catch((err) => {
+          console.error('Error de reproducción:', err);
+          // Intentar nuevamente después de un breve delay
+          setTimeout(() => {
+            backgroundMusicElement.play().catch(() => {
+              showNotification('⚠️ Grabando sin música');
+            });
+          }, 100);
+        });
       } else {
-        console.log('No hay música cargada');
         showNotification('📹 Grabando video');
       }
 
@@ -1380,9 +1293,6 @@ document.getElementById('timerToggle').addEventListener('click', () => {
 
       // Timer
       timerInterval = setInterval(updateTimer, 100);
-
-      // Progress bar circular
-      progressInterval = setInterval(updateCircularProgress, 100);
 
       // Auto-stop después del tiempo máximo
       setTimeout(() => {
@@ -1398,18 +1308,13 @@ document.getElementById('timerToggle').addEventListener('click', () => {
 
       captureButton.classList.remove('recording');
       recordingTimer.classList.remove('active');
-      circularProgress.classList.remove('active');
+      recordingIndicator.classList.remove('active');
 
       if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.stop();
       }
 
       clearInterval(timerInterval);
-      clearInterval(progressInterval);
-
-      // Reset circular progress
-      progressRingCircle.style.strokeDashoffset = '301.59';
-
       playStopRecordingSound();
       showNotification('Video guardado');
     }
@@ -1422,19 +1327,7 @@ document.getElementById('timerToggle').addEventListener('click', () => {
       timerText.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
-    // Actualizar progress bar circular con animación estilo Twitter
-    function updateCircularProgress() {
-      const elapsed = Date.now() - recordingStartTime;
-      const progress = Math.min(elapsed / maxRecordingTime, 1);
-      const circumference = 301.59; // 2 * π * 48
-      const offset = circumference - (progress * circumference);
-      
-      progressRingCircle.style.strokeDashoffset = Math.max(offset, 0);
-      
-      // Cambiar color según el progreso
-      const hue = 200 - (progress * 60); // De azul (200) a cyan (140)
-      progressRingCircle.style.stroke = `hsl(${hue}, 100%, 60%)`;
-    }
+    
 
     // Efectos visuales
     function showFlashEffect() {
@@ -1519,6 +1412,10 @@ document.getElementById('timerToggle').addEventListener('click', () => {
     window.addEventListener('load', () => {
       initCamera();
       loadFilters();
+      
+      // Inicializar audio en la primera interacción del usuario
+      document.addEventListener('touchstart', initializeAudio, { once: true });
+      document.addEventListener('click', initializeAudio, { once: true });
     });
 
     // Manejar visibilidad de la página
