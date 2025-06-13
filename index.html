@@ -249,18 +249,21 @@
       filter: drop-shadow(0 0 6px rgba(255, 0, 64, 0.8));
     }
     
-    /* Cronómetro cuenta regresiva */
+    /* Cronómetro cuenta regresiva estilo TikTok */
     .countdown-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.9);
+      border-radius: 20px;
+      padding: 20px 30px;
       display: none;
       align-items: center;
       justify-content: center;
       z-index: 500;
+      backdrop-filter: blur(20px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
     }
     
     .countdown-overlay.active {
@@ -268,10 +271,10 @@
     }
     
     .countdown-number {
-      font-size: 120px;
+      font-size: 48px;
       font-weight: 900;
       color: #fff;
-      text-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
       animation: countdownPulse 1s ease infinite;
     }
     
@@ -281,15 +284,19 @@
       100% { transform: scale(1); opacity: 1; }
     }
     
-    /* Controles de música */
+    /* Controles de música - solo en video */
     .music-controls {
       position: fixed;
-      top: 70px;
+      top: 200px;
       right: 20px;
-      display: flex;
+      display: none;
       flex-direction: column;
       gap: 10px;
       z-index: 100;
+    }
+    
+    .music-controls.video-mode {
+      display: flex;
     }
     
     .music-btn {
@@ -519,38 +526,31 @@
       100% { opacity: 0; }
     }
     
-    /* Cronómetro selector */
-    .timer-selector {
+    /* Indicador de cronómetro activo */
+    .timer-indicator {
       position: fixed;
-      bottom: 240px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 10px;
-      background: rgba(0, 0, 0, 0.8);
-      padding: 10px;
-      border-radius: 25px;
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      z-index: 100;
-    }
-    
-    .timer-option {
-      background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      top: 80px;
+      right: 20px;
+      background: rgba(255, 0, 80, 0.9);
       color: #fff;
       padding: 8px 15px;
       border-radius: 20px;
       font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(20px);
+      z-index: 100;
+      animation: fadeInDown 0.3s ease;
     }
     
-    .timer-option.active {
-      background: #1d9bf0;
-      border-color: #1d9bf0;
-      transform: scale(1.05);
+    .timer-indicator.active {
+      display: flex;
+    }
+    
+    .timer-indicator i {
+      animation: blink 1s infinite;
     }
     
     /* Media queries para responsive */
@@ -599,6 +599,7 @@
         <button id="switchCamera" class="header-btn"><i class="fas fa-camera-rotate"></i></button>
         <button id="flash" class="header-btn"><i class="fas fa-bolt"></i></button>
         <button id="gridToggle" class="header-btn"><i class="fas fa-th"></i></button>
+        <button id="timerToggle" class="header-btn"><i class="fas fa-clock"></i></button>
       </div>
     </div>
 
@@ -637,12 +638,10 @@
       </svg>
     </div>
 
-    <!-- Selector de cronómetro -->
-    <div class="timer-selector" id="timerSelector">
-      <button class="timer-option active" data-timer="0">SIN</button>
-      <button class="timer-option" data-timer="3">3s</button>
-      <button class="timer-option" data-timer="5">5s</button>
-      <button class="timer-option" data-timer="10">10s</button>
+    <!-- Indicador de cronómetro -->
+    <div class="timer-indicator" id="timerIndicator">
+      <i class="fas fa-clock"></i>
+      <span id="timerIndicatorText">3s</span>
     </div>
 
     <!-- Controles principales -->
@@ -772,11 +771,13 @@
       createBeep(1500, 0.4);
     }
 
-    // Activar flash automáticamente para cámara frontal
+    // Flash solo disponible en cámara frontal
     async function checkAutoFlash() {
+      const flashBtn = document.getElementById('flash');
       if (facingMode === 'user') {
+        flashBtn.style.display = 'flex';
         flashEnabled = true;
-        document.getElementById('flash').classList.add('active');
+        flashBtn.classList.add('active');
         if (currentStream) {
           const track = currentStream.getVideoTracks()[0];
           try {
@@ -784,11 +785,13 @@
           } catch (err) {
             console.log('Flash no disponible en cámara frontal');
             flashEnabled = false;
-            document.getElementById('flash').classList.remove('active');
+            flashBtn.classList.remove('active');
           }
         }
       } else {
-        // Mantener el estado actual del flash para cámara trasera
+        flashBtn.style.display = 'none';
+        flashEnabled = false;
+        flashBtn.classList.remove('active');
       }
     }
 
@@ -878,6 +881,15 @@
         document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentMode = btn.dataset.mode;
+        
+        // Mostrar/ocultar controles de música
+        const musicControls = document.querySelector('.music-controls');
+        if (currentMode === 'video') {
+          musicControls.classList.add('video-mode');
+        } else {
+          musicControls.classList.remove('video-mode');
+        }
+        
         initCamera();
       });
     });
@@ -887,7 +899,6 @@
       if (isRecording) return;
       facingMode = (facingMode === 'environment') ? 'user' : 'environment';
       await initCamera();
-      document.getElementById('flash').style.display = (facingMode === 'environment') ? 'block' : 'none';
     });
 
     // Flash
@@ -914,14 +925,28 @@
       showNotification(gridOverlay.classList.contains('active') ? 'Cuadrícula activada' : 'Cuadrícula desactivada');
     });
 
-    // Selector de cronómetro
-    document.querySelectorAll('.timer-option').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.timer-option').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        countdownTime = parseInt(btn.dataset.timer);
-        showNotification(countdownTime === 0 ? 'Cronómetro desactivado' : `Cronómetro: ${countdownTime}s`);
-      });
+    // Cronómetro toggle
+    const timerOptions = [0, 3, 5, 10]; // Opciones de tiempo
+    let currentTimerIndex = 0;
+    
+    document.getElementById('timerToggle').addEventListener('click', () => {
+      currentTimerIndex = (currentTimerIndex + 1) % timerOptions.length;
+      countdownTime = timerOptions[currentTimerIndex];
+      
+      const timerBtn = document.getElementById('timerToggle');
+      const timerIndicator = document.getElementById('timerIndicator');
+      const timerIndicatorText = document.getElementById('timerIndicatorText');
+      
+      if (countdownTime === 0) {
+        timerBtn.classList.remove('active');
+        timerIndicator.classList.remove('active');
+        showNotification('Cronómetro desactivado');
+      } else {
+        timerBtn.classList.add('active');
+        timerIndicator.classList.add('active');
+        timerIndicatorText.textContent = `${countdownTime}s`;
+        showNotification(`Cronómetro: ${countdownTime}s`);
+      }
     });
 
     // Controles de música
@@ -986,12 +1011,9 @@
           countdownNumber.textContent = count;
           playCountdownSound();
         } else {
-          countdownNumber.textContent = 'GO!';
           playFinalCountdownSound();
-          setTimeout(() => {
-            countdownOverlay.classList.remove('active');
-            callback();
-          }, 500);
+          countdownOverlay.classList.remove('active');
+          callback();
           clearInterval(countdownInterval);
         }
       }, 1000);
