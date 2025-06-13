@@ -1,117 +1,496 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Cámara Profesional - Realtime Filters</title>
+  <title>Cámara Pro - Video & Photo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-  <!-- Iconos Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    /* Reinicio básico */
     * {
       margin: 0; padding: 0; box-sizing: border-box;
     }
+    
     body {
       height: 100vh;
-      background: linear-gradient(150deg, #000, #222);
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       overflow: hidden;
       position: relative;
     }
+    
     .camera-app {
-      position: fixed; width: 100%; height: 100%; overflow: hidden;
+      position: fixed; 
+      width: 100%; 
+      height: 100%; 
+      overflow: hidden;
+      background: #000;
     }
+    
     #camera {
-      width: 100%; height: 100%; object-fit: cover;
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover;
     }
-    /* Controles superiores */
-    .controls-top {
-      position: fixed; top: 30px; left: 20px; right: 20px;
-      display: flex; justify-content: space-between; align-items: center; z-index: 2;
+    
+    /* Header estilo Twitter */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 100;
     }
-    .controls-top button {
-      background: rgba(0, 0, 0, 0.4);
-      border: none; color: white; width: 48px; height: 48px; border-radius: 50%;
-      font-size: 22px; display: flex; align-items: center; justify-content: center;
-      backdrop-filter: blur(5px); box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-      transition: transform 0.2s ease;
+    
+    .header-left, .header-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
     }
-    .controls-top button:active { transform: scale(0.95); }
-    #flash { display: none; }
-    /* Botón de captura */
-    .controls-bottom {
-      position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
-      z-index: 2;
+    
+    .header-title {
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
     }
+    
+    .header-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #fff;
+      width: 40px;
+      height: 40px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(10px);
+    }
+    
+    .header-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+    
+    .header-btn:active {
+      transform: scale(0.95);
+    }
+    
+    .header-btn.active {
+      background: #1d9bf0;
+      box-shadow: 0 0 20px rgba(29, 155, 240, 0.5);
+    }
+    
+    /* Controles principales */
+    .controls-main {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      z-index: 100;
+    }
+    
+    .mode-selector {
+      display: flex;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 25px;
+      padding: 8px;
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .mode-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.7);
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .mode-btn.active {
+      background: #1d9bf0;
+      color: #fff;
+      transform: scale(1.02);
+    }
+    
+    /* Botón de captura principal */
     #captureButton {
-      width: 80px; height: 80px; border-radius: 50%;
-      background: linear-gradient(45deg, #F700A2, #00F0FF); padding: 3px;
-      display: flex; align-items: center; justify-content: center;
-      transition: transform 0.15s ease;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      position: relative;
+      cursor: pointer;
     }
-    .capture-button-inner {
-      width: 100%; height: 100%; background: #000; border-radius: 50%;
+    
+    .capture-inner {
+      width: 60px;
+      height: 60px;
+      background: #fff;
+      border-radius: 50%;
+      transition: all 0.3s ease;
     }
-    /* Panel de filtros (carrusel) */
+    
+    /* Estados del botón de captura */
+    #captureButton.recording {
+      border-color: #ff0040;
+      animation: pulse 1.5s infinite;
+    }
+    
+    #captureButton.recording .capture-inner {
+      background: #ff0040;
+      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+    }
+    
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 0, 64, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 0, 64, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 0, 64, 0); }
+    }
+    
+    /* Timer de grabación */
+    .recording-timer {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 0, 64, 0.9);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(20px);
+      z-index: 100;
+      animation: fadeInDown 0.3s ease;
+    }
+    
+    .recording-timer.active {
+      display: flex;
+    }
+    
+    .timer-dot {
+      width: 8px;
+      height: 8px;
+      background: #fff;
+      border-radius: 50%;
+      animation: blink 1s infinite;
+    }
+    
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.3; }
+    }
+    
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    
+    /* Barra de progreso circular */
+    .circular-progress {
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      width: 88px;
+      height: 88px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    
+    .circular-progress.active {
+      opacity: 1;
+    }
+    
+    .progress-ring {
+      width: 88px;
+      height: 88px;
+      transform: rotate(-90deg);
+    }
+    
+    .progress-ring-circle {
+      fill: transparent;
+      stroke: #ff0040;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 276.46;
+      stroke-dashoffset: 276.46;
+      transition: stroke-dashoffset 0.1s linear;
+      filter: drop-shadow(0 0 6px rgba(255, 0, 64, 0.8));
+    }
+    
+    /* Cuadrícula */
+    .grid-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 50;
+      transition: opacity 0.3s ease;
+    }
+    
+    .grid-overlay.active {
+      opacity: 1;
+    }
+    
+    .grid-overlay svg {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .grid-line {
+      stroke: rgba(255, 255, 255, 0.5);
+      stroke-width: 1;
+      stroke-dasharray: 5, 5;
+    }
+    
+    /* Panel de filtros */
     .filters-panel {
-      position: fixed; bottom: 120px; left: 0; right: 0; height: 90px;
-      overflow-x: auto; white-space: nowrap;
-      scrollbar-width: none; -ms-overflow-style: none;
-      display: flex; align-items: center; justify-content: center;
-      background: transparent; padding: 10px 0; z-index: 1;
+      position: fixed;
+      bottom: 140px;
+      left: 0;
+      right: 0;
+      height: 90px;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      background: transparent;
+      padding: 10px 0;
+      z-index: 50;
     }
-    .filters-panel::-webkit-scrollbar { display: none; }
+    
+    .filters-panel::-webkit-scrollbar {
+      display: none;
+    }
+    
     .filters-container {
-      display: flex; gap: 20px; padding: 0 10px;
+      display: flex;
+      gap: 15px;
+      padding: 0 20px;
     }
+    
     .filter-btn {
-      width: 65px; height: 65px; border-radius: 50%;
-      border: 3px solid rgba(255,255,255,0.8);
-      background-position: center; background-size: cover;
-      color: white; font-size: 11px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; backdrop-filter: blur(5px);
-      transition: all 0.2s ease; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-      position: relative; overflow: hidden;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      background-position: center;
+      background-size: cover;
+      color: #fff;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
     }
+    
     .filter-btn::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.4); z-index: 1;
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 1;
     }
-    .filter-btn span { position: relative; z-index: 2; }
+    
+    .filter-btn span {
+      position: relative;
+      z-index: 2;
+      font-weight: 600;
+    }
+    
     .filter-btn.active {
-      border-color: #00f2ea; transform: scale(1.1);
-      background: rgba(0,242,234,0.2); transition: all 0.3s ease;
+      border-color: #1d9bf0;
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(29, 155, 240, 0.6);
+    }
+    
+    /* Notificaciones */
+    .notification {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: rgba(29, 155, 240, 0.95);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: 600;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      z-index: 200;
+      backdrop-filter: blur(20px);
+    }
+    
+    .notification.show {
+      transform: translateX(0);
+    }
+    
+    /* Efectos visuales */
+    .flash-effect {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      opacity: 0;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    
+    .flash-effect.active {
+      animation: flashAnimation 0.2s ease;
+    }
+    
+    @keyframes flashAnimation {
+      0% { opacity: 0; }
+      50% { opacity: 0.8; }
+      100% { opacity: 0; }
+    }
+    
+    /* Media queries para responsive */
+    @media (max-width: 480px) {
+      .header {
+        padding: 0 15px;
+      }
+      
+      .controls-main {
+        gap: 20px;
+      }
+      
+      #captureButton {
+        width: 70px;
+        height: 70px;
+      }
+      
+      .capture-inner {
+        width: 50px;
+        height: 50px;
+      }
+      
+      .filters-container {
+        padding: 0 15px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="camera-app">
-    <video id="camera" autoplay playsinline></video>
+    <video id="camera" autoplay playsinline muted></video>
     <canvas id="canvas" style="display: none;"></canvas>
 
-    <div class="controls-top">
-      <button id="switchCamera"><i class="fas fa-camera-rotate"></i></button>
-      <button id="flash" class="flash-btn"><i class="fas fa-bolt"></i></button>
-    </div>
-
-    <div class="controls-bottom">
-      <button id="captureButton"><div class="capture-button-inner"></div></button>
-    </div>
-
-    <!-- Panel de filtros cargado dinámicamente -->
-    <div class="filters-panel" id="filtersPanel">
-      <div class="filters-container" id="filtersContainer">
-        <!-- Se agregarán aquí los filtros desde Firebase -->
+    <!-- Header estilo Twitter -->
+    <div class="header">
+      <div class="header-left">
+        <div class="header-title">Camera Pro</div>
+      </div>
+      <div class="header-right">
+        <button id="switchCamera" class="header-btn"><i class="fas fa-camera-rotate"></i></button>
+        <button id="flash" class="header-btn"><i class="fas fa-bolt"></i></button>
+        <button id="gridToggle" class="header-btn"><i class="fas fa-th"></i></button>
       </div>
     </div>
+
+    <!-- Timer de grabación -->
+    <div class="recording-timer" id="recordingTimer">
+      <div class="timer-dot"></div>
+      <span id="timerText">00:00</span>
+    </div>
+
+    <!-- Cuadrícula -->
+    <div class="grid-overlay" id="gridOverlay">
+      <svg>
+        <!-- Líneas verticales -->
+        <line class="grid-line" x1="33.33%" y1="0%" x2="33.33%" y2="100%"></line>
+        <line class="grid-line" x1="66.66%" y1="0%" x2="66.66%" y2="100%"></line>
+        <!-- Líneas horizontales -->
+        <line class="grid-line" x1="0%" y1="33.33%" x2="100%" y2="33.33%"></line>
+        <line class="grid-line" x1="0%" y1="66.66%" x2="100%" y2="66.66%"></line>
+      </svg>
+    </div>
+
+    <!-- Controles principales -->
+    <div class="controls-main">
+      <div class="mode-selector">
+        <button class="mode-btn active" data-mode="photo">FOTO</button>
+        <button class="mode-btn" data-mode="video">VIDEO</button>
+      </div>
+      
+      <button id="captureButton">
+        <div class="capture-inner"></div>
+        <div class="circular-progress" id="circularProgress">
+          <svg class="progress-ring">
+            <circle class="progress-ring-circle" cx="44" cy="44" r="44"></circle>
+          </svg>
+        </div>
+      </button>
+    </div>
+
+    <!-- Panel de filtros -->
+    <div class="filters-panel" id="filtersPanel">
+      <div class="filters-container" id="filtersContainer">
+        <!-- Filtros se cargan desde Firebase -->
+      </div>
+    </div>
+
+    <!-- Efecto flash -->
+    <div class="flash-effect" id="flashEffect"></div>
+
+    <!-- Notificación -->
+    <div class="notification" id="notification"></div>
   </div>
 
-  <!-- Firebase SDK (compat para facilitar la integración) -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  
   <script>
-    // Configuración de Firebase (usa la proporcionada)
+    // Configuración Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCFQ_geG0HIv2EZ-bfKc97TJNtf2sdqPzc",
       authDomain: "clack-koder.firebaseapp.com",
@@ -125,36 +504,141 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Variables para la cámara y los filtros
+    // Variables globales
     let currentStream;
     let currentFilterCss = 'none';
     let facingMode = 'environment';
     let flashEnabled = false;
+    let isRecording = false;
+    let mediaRecorder;
+    let recordedChunks = [];
+    let recordingStartTime;
+    let timerInterval;
+    let progressInterval;
+    let currentMode = 'photo';
+    let maxRecordingTime = 60000; // 60 segundos
 
+    // Elementos DOM
+    const camera = document.getElementById('camera');
+    const captureButton = document.getElementById('captureButton');
+    const recordingTimer = document.getElementById('recordingTimer');
+    const timerText = document.getElementById('timerText');
+    const circularProgress = document.getElementById('circularProgress');
+    const progressRingCircle = document.querySelector('.progress-ring-circle');
+    const flashEffect = document.getElementById('flashEffect');
+    const notification = document.getElementById('notification');
+    const gridOverlay = document.getElementById('gridOverlay');
+
+    // Sonidos (Web Audio API)
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function createBeep(frequency, duration, type = 'sine') {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = type;
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + duration);
+    }
+
+    function playShutterSound() {
+      createBeep(800, 0.1);
+      setTimeout(() => createBeep(600, 0.1), 50);
+    }
+
+    function playStartRecordingSound() {
+      createBeep(1000, 0.2);
+    }
+
+    function playStopRecordingSound() {
+      createBeep(800, 0.15);
+      setTimeout(() => createBeep(600, 0.15), 100);
+    }
+
+    // Inicializar cámara
     async function initCamera() {
       try {
         const constraints = {
-          video: { facingMode: facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } }
+          video: { 
+            facingMode: facingMode, 
+            width: { ideal: 1920 }, 
+            height: { ideal: 1080 } 
+          },
+          audio: currentMode === 'video'
         };
+        
+        if (currentStream) {
+          currentStream.getTracks().forEach(track => track.stop());
+        }
+        
         currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-        document.getElementById('camera').srcObject = currentStream;
+        camera.srcObject = currentStream;
+        
+        // Configurar MediaRecorder para video
+        if (currentMode === 'video') {
+          setupMediaRecorder();
+        }
       } catch (err) {
         console.error('Error al acceder a la cámara:', err);
+        showNotification('Error al acceder a la cámara');
       }
     }
 
-    // Cambio entre cámaras (frontal/trasera)
+    // Configurar MediaRecorder
+    function setupMediaRecorder() {
+      if (currentStream && currentMode === 'video') {
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(currentStream, {
+          mimeType: 'video/webm;codecs=vp9'
+        });
+        
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordedChunks.push(event.data);
+          }
+        };
+        
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedChunks, { type: 'video/webm' });
+          downloadFile(blob, 'video_' + new Date().getTime() + '.webm');
+          recordedChunks = [];
+        };
+      }
+    }
+
+    // Cambiar modo (foto/video)
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (isRecording) return;
+        
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMode = btn.dataset.mode;
+        initCamera();
+      });
+    });
+
+    // Cambiar cámara
     document.getElementById('switchCamera').addEventListener('click', async () => {
-      if (currentStream) currentStream.getTracks().forEach(track => track.stop());
+      if (isRecording) return;
       facingMode = (facingMode === 'environment') ? 'user' : 'environment';
       await initCamera();
       document.getElementById('flash').style.display = (facingMode === 'environment') ? 'block' : 'none';
     });
 
-    // Funcionalidad del flash (si es compatible)
+    // Flash
     document.getElementById('flash').addEventListener('click', async () => {
       flashEnabled = !flashEnabled;
-      document.getElementById('flash').classList.toggle('active');
+      document.getElementById('flash').classList.toggle('active', flashEnabled);
+      
       if (currentStream) {
         const track = currentStream.getVideoTracks()[0];
         try {
@@ -167,58 +651,204 @@
       }
     });
 
-    // Función que aplica el filtro seleccionado al video
-    function applyFilter() {
-      document.getElementById('camera').style.filter = currentFilterCss;
-    }
-
-    // Capturar imagen y descargar
-    document.getElementById('captureButton').addEventListener('click', () => {
-      const video = document.getElementById('camera');
-      const canvas = document.getElementById('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const context = canvas.getContext('2d');
-      context.filter = window.getComputedStyle(video).filter;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const image = canvas.toDataURL('image/jpeg', 1.0);
-      const link = document.createElement('a');
-      link.href = image;
-      link.download = 'foto_' + new Date().getTime() + '.jpg';
-      link.click();
-      // Efecto visual en el botón de captura
-      const captureButton = document.getElementById('captureButton');
-      captureButton.style.transform = 'scale(0.9)';
-      setTimeout(() => { captureButton.style.transform = 'scale(1)'; }, 150);
+    // Grid toggle
+    document.getElementById('gridToggle').addEventListener('click', () => {
+      document.getElementById('gridToggle').classList.toggle('active');
+      gridOverlay.classList.toggle('active');
+      showNotification(gridOverlay.classList.contains('active') ? 'Cuadrícula activada' : 'Cuadrícula desactivada');
     });
 
-    // Función para renderizar cada botón de filtro desde Firebase
+    // Aplicar filtro
+    function applyFilter() {
+      camera.style.filter = currentFilterCss;
+    }
+
+    // Captura principal
+    captureButton.addEventListener('mousedown', handleCaptureStart);
+    captureButton.addEventListener('mouseup', handleCaptureEnd);
+    captureButton.addEventListener('touchstart', handleCaptureStart);
+    captureButton.addEventListener('touchend', handleCaptureEnd);
+
+    function handleCaptureStart(e) {
+      e.preventDefault();
+      if (currentMode === 'photo') {
+        takePhoto();
+      } else {
+        if (!isRecording) {
+          startRecording();
+        }
+      }
+    }
+
+    function handleCaptureEnd(e) {
+      e.preventDefault();
+      if (currentMode === 'video' && isRecording) {
+        stopRecording();
+      }
+    }
+
+    // Tomar foto
+    function takePhoto() {
+      const canvas = document.getElementById('canvas');
+      canvas.width = camera.videoWidth;
+      canvas.height = camera.videoHeight;
+      const context = canvas.getContext('2d');
+      
+      context.filter = window.getComputedStyle(camera).filter;
+      context.drawImage(camera, 0, 0, canvas.width, canvas.height);
+      
+      const image = canvas.toDataURL('image/jpeg', 0.95);
+      downloadFile(dataURLtoBlob(image), 'foto_' + new Date().getTime() + '.jpg');
+      
+      // Efectos
+      playShutterSound();
+      showFlashEffect();
+      showNotification('Foto guardada');
+      
+      // Animación del botón
+      captureButton.style.transform = 'scale(0.9)';
+      setTimeout(() => { captureButton.style.transform = 'scale(1)'; }, 150);
+    }
+
+    // Iniciar grabación
+    function startRecording() {
+      if (!mediaRecorder || mediaRecorder.state === 'recording') return;
+      
+      isRecording = true;
+      recordingStartTime = Date.now();
+      
+      captureButton.classList.add('recording');
+      recordingTimer.classList.add('active');
+      circularProgress.classList.add('active');
+      
+      mediaRecorder.start();
+      playStartRecordingSound();
+      
+      // Timer
+      timerInterval = setInterval(updateTimer, 100);
+      
+      // Progress bar circular
+      progressInterval = setInterval(updateCircularProgress, 100);
+      
+      // Auto-stop después del tiempo máximo
+      setTimeout(() => {
+        if (isRecording) stopRecording();
+      }, maxRecordingTime);
+      
+      showNotification('Grabación iniciada');
+    }
+
+    // Detener grabación
+    function stopRecording() {
+      if (!isRecording) return;
+      
+      isRecording = false;
+      
+      captureButton.classList.remove('recording');
+      recordingTimer.classList.remove('active');
+      circularProgress.classList.remove('active');
+      
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+      
+      clearInterval(timerInterval);
+      clearInterval(progressInterval);
+      
+      // Reset circular progress
+      progressRingCircle.style.strokeDashoffset = '276.46';
+      
+      playStopRecordingSound();
+      showNotification('Video guardado');
+    }
+
+    // Actualizar timer
+    function updateTimer() {
+      const elapsed = Date.now() - recordingStartTime;
+      const seconds = Math.floor(elapsed / 1000) % 60;
+      const minutes = Math.floor(elapsed / 60000);
+      timerText.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    // Actualizar progress bar circular
+    function updateCircularProgress() {
+      const elapsed = Date.now() - recordingStartTime;
+      const progress = (elapsed / maxRecordingTime);
+      const circumference = 276.46;
+      const offset = circumference - (progress * circumference);
+      progressRingCircle.style.strokeDashoffset = Math.max(offset, 0);
+    }
+
+    // Efectos visuales
+    function showFlashEffect() {
+      flashEffect.classList.add('active');
+      setTimeout(() => {
+        flashEffect.classList.remove('active');
+      }, 200);
+    }
+
+    function showNotification(message) {
+      notification.textContent = message;
+      notification.classList.add('show');
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+
+    // Utilidades
+    function dataURLtoBlob(dataURL) {
+      const arr = dataURL.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new Blob([u8arr], { type: mime });
+    }
+
+    function downloadFile(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    // Cargar filtros desde Firebase
     function renderFilterButton(filterId, filterData) {
       const btn = document.createElement('button');
       btn.classList.add('filter-btn');
+      
       if (filterData.imagen) {
         btn.style.backgroundImage = `url(${filterData.imagen})`;
       } else {
         btn.style.backgroundColor = '#333';
       }
+      
       btn.innerHTML = `<span>${filterData.nombre}</span>`;
+      
       btn.addEventListener('click', () => {
-        // Remueve la clase 'active' de todos y asigna al actual
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentFilterCss = filterData.css || 'none';
         applyFilter();
       });
+      
       return btn;
     }
 
-    // Función para cargar filtros desde Firebase en tiempo real (desde la ruta "filtros")
     function loadFilters() {
       const filtersRef = db.ref('filtros');
       filtersRef.on('value', (snapshot) => {
         const data = snapshot.val();
         const container = document.getElementById('filtersContainer');
-        container.innerHTML = ''; // Limpia el contenedor
+        container.innerHTML = '';
+        
         if (data) {
           Object.keys(data).forEach(filterId => {
             const btn = renderFilterButton(filterId, data[filterId]);
@@ -228,9 +858,17 @@
       });
     }
 
+    // Inicialización
     window.addEventListener('load', () => {
       initCamera();
       loadFilters();
+    });
+
+    // Manejar visibilidad de la página
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && isRecording) {
+        stopRecording();
+      }
     });
   </script>
 </body>
