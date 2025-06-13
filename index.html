@@ -814,17 +814,27 @@
       }
     }
 
-    // Inicializar cámara
+    // Inicializar cámara con mejor compatibilidad móvil
     async function initCamera() {
       try {
+        // Configuración adaptativa para móvil
+        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
         const constraints = {
           video: { 
-            facingMode: facingMode, 
-            width: { ideal: 1920 }, 
-            height: { ideal: 1080 } 
+            facingMode: facingMode,
+            width: isMobile ? { ideal: 1280, max: 1920 } : { ideal: 1920 },
+            height: isMobile ? { ideal: 720, max: 1080 } : { ideal: 1080 },
+            frameRate: isMobile ? { ideal: 30, max: 30 } : { ideal: 30 }
           },
-          audio: currentMode === 'video'
+          audio: currentMode === 'video' ? {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          } : false
         };
+
+        console.log('Inicializando cámara con constraints:', constraints);
 
         if (currentStream) {
           currentStream.getTracks().forEach(track => track.stop());
@@ -833,20 +843,49 @@
         currentStream = await navigator.mediaDevices.getUserMedia(constraints);
         camera.srcObject = currentStream;
 
+        console.log('Stream obtenido:', {
+          video: currentStream.getVideoTracks().length,
+          audio: currentStream.getAudioTracks().length,
+          mode: currentMode
+        });
+
         // Configurar MediaRecorder para video
         if (currentMode === 'video') {
-          setupMediaRecorder();
+          // Esperar un poco para que el stream se estabilice
+          setTimeout(() => {
+            setupMediaRecorder();
+          }, 500);
         }
 
         // Verificar auto-flash
         await checkAutoFlash();
+        
+        showNotification(`📷 Cámara ${facingMode === 'environment' ? 'trasera' : 'frontal'} lista`);
+
       } catch (err) {
         console.error('Error al acceder a la cámara:', err);
-        showNotification('Error al acceder a la cámara');
+        showNotification('❌ Error al acceder a la cámara: ' + err.message);
+        
+        // Intentar con configuración más básica
+        try {
+          const basicConstraints = {
+            video: { facingMode: facingMode },
+            audio: currentMode === 'video'
+          };
+          currentStream = await navigator.mediaDevices.getUserMedia(basicConstraints);
+          camera.srcObject = currentStream;
+          if (currentMode === 'video') {
+            setTimeout(() => setupMediaRecorder(), 500);
+          }
+          showNotification('📷 Cámara iniciada (modo básico)');
+        } catch (basicErr) {
+          console.error('Error con configuración básica:', basicErr);
+          showNotification('❌ No se puede acceder a la cámara');
+        }
       }
     }
 
-    // Configurar MediaRecorder
+    // Configurar MediaRecorder con mejor compatibilidad móvil
     function setupMediaRecorder() {
       if (currentStream && currentMode === 'video') {
         recordedChunks = [];
@@ -857,7 +896,7 @@
         // Si hay música de fondo, crear AudioContext para mezclar
         if (backgroundMusic) {
           try {
-            const audioContext = new AudioContext();
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const destination = audioContext.createMediaStreamDestination();
 
             // Audio del micrófono
@@ -889,31 +928,70 @@
           }
         }
 
-        // Configurar MediaRecorder con mejor compatibilidad
-        const options = { mimeType: 'video/webm' };
-        if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
-          options.mimeType = 'video/webm;codecs=vp9,opus';
+        // Configurar MediaRecorder con máxima compatibilidad móvil
+        let options = {};
+        
+        // Probar diferentes formatos para móvil
+        if (MediaRecorder.isTypeSupported('video/mp4')) {
+          options.mimeType = 'video/mp4';
         } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
           options.mimeType = 'video/webm;codecs=vp8,opus';
+        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
+          options.mimeType = 'video/webm;codecs=vp9,opus';
+        } else if (MediaRecorder.isTypeSupported('video/webm')) {
+          options.mimeType = 'video/webm';
         }
 
-        mediaRecorder = new MediaRecorder(finalStream, options);
+        // Agregar configuración de bitrate para móvil
+        options.videoBitsPerSecond = 2500000; // 2.5 Mbps
+        options.audioBitsPerSecond = 128000;  // 128 kbps
+
+        console.log('MediaRecorder options:', options);
+
+        try {
+          mediaRecorder = new MediaRecorder(finalStream, options);
+        } catch (error) {
+          console.log('Error con opciones específicas, usando configuración básica:', error);
+          mediaRecorder = new MediaRecorder(finalStream);
+        }
 
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
             recordedChunks.push(event.data);
+            console.log('Chunk grabado:', event.data.size, 'bytes');
           }
         };
 
+        mediaRecorder.onstart = () => {
+          console.log('MediaRecorder iniciado');
+          showNotification('📹 Grabación iniciada');
+        };
+
         mediaRecorder.onstop = () => {
-          const blob = new Blob(recordedChunks, { type: 'video/webm' });
-          downloadFile(blob, 'video_' + new Date().getTime() + '.webm');
+          console.log('MediaRecorder detenido, chunks:', recordedChunks.length);
+          if (recordedChunks.length > 0) {
+            const mimeType = options.mimeType || 'video/webm';
+            const blob = new Blob(recordedChunks, { type: mimeType });
+            const extension = mimeType.includes('mp4') ? '.mp4' : '.webm';
+            downloadFile(blob, 'video_' + new Date().getTime() + extension);
+            showNotification('✅ Video guardado');
+          } else {
+            showNotification('❌ Error: No se grabó contenido');
+          }
           recordedChunks = [];
         };
 
         mediaRecorder.onerror = (event) => {
           console.error('Error en MediaRecorder:', event.error);
-          showNotification('Error al grabar video');
+          showNotification('❌ Error al grabar: ' + event.error.name);
+        };
+
+        mediaRecorder.onpause = () => {
+          console.log('MediaRecorder pausado');
+        };
+
+        mediaRecorder.onresume = () => {
+          console.log('MediaRecorder reanudado');
         };
       }
     }
@@ -1106,15 +1184,73 @@ document.getElementById('timerToggle').addEventListener('click', () => {
       }, 1000);
     }
 
-    // Captura principal
-    captureButton.addEventListener('mousedown', handleCaptureStart);
-    captureButton.addEventListener('mouseup', handleCaptureEnd);
-    captureButton.addEventListener('mouseleave', handleCaptureEnd);
-    captureButton.addEventListener('touchstart', handleCaptureStart);
-    captureButton.addEventListener('touchend', handleCaptureEnd);
-    captureButton.addEventListener('touchcancel', handleCaptureEnd);
+    // Variables para control táctil
+    let touchStartTime = 0;
+    let longPressTimer = null;
+    let isLongPress = false;
 
-    function handleCaptureStart(e) {
+    // Captura principal - Mobile first approach
+    captureButton.addEventListener('touchstart', handleTouchStart, { passive: false });
+    captureButton.addEventListener('touchend', handleTouchEnd, { passive: false });
+    captureButton.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+    
+    // Desktop fallback
+    captureButton.addEventListener('mousedown', handleMouseStart);
+    captureButton.addEventListener('mouseup', handleMouseEnd);
+    captureButton.addEventListener('mouseleave', handleMouseEnd);
+
+    function handleTouchStart(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      touchStartTime = Date.now();
+      isLongPress = false;
+
+      if (currentMode === 'photo') {
+        // Foto inmediata en modo foto
+        startCountdown(() => {
+          takePhoto();
+        });
+      } else {
+        // Modo video - iniciar grabación inmediatamente en móvil
+        if (!isRecording) {
+          longPressTimer = setTimeout(() => {
+            isLongPress = true;
+            startCountdown(() => {
+              startRecording();
+            });
+          }, 200); // Pequeño delay para evitar toques accidentales
+        }
+      }
+    }
+
+    function handleTouchEnd(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+
+      const touchDuration = Date.now() - touchStartTime;
+
+      if (currentMode === 'video') {
+        if (isRecording) {
+          // Detener grabación
+          stopRecording();
+        } else if (!isLongPress && touchDuration < 200) {
+          // Toque rápido en modo video - también iniciar grabación
+          startCountdown(() => {
+            startRecording();
+          });
+        }
+      }
+      
+      isLongPress = false;
+    }
+
+    function handleMouseStart(e) {
       e.preventDefault();
       if (currentMode === 'photo') {
         startCountdown(() => {
@@ -1129,7 +1265,7 @@ document.getElementById('timerToggle').addEventListener('click', () => {
       }
     }
 
-    function handleCaptureEnd(e) {
+    function handleMouseEnd(e) {
       e.preventDefault();
       if (currentMode === 'video' && isRecording) {
         stopRecording();
