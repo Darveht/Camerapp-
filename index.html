@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,7 +9,7 @@
     * {
       margin: 0; padding: 0; box-sizing: border-box;
     }
-    
+
     body {
       height: 100vh;
       background: #000;
@@ -18,7 +17,7 @@
       overflow: hidden;
       position: relative;
     }
-    
+
     .camera-app {
       position: fixed; 
       width: 100%; 
@@ -26,13 +25,13 @@
       overflow: hidden;
       background: #000;
     }
-    
+
     #camera {
       width: 100%; 
       height: 100%; 
       object-fit: cover;
     }
-    
+
     /* Header estilo Twitter */
     .header {
       position: fixed;
@@ -49,20 +48,20 @@
       padding: 0 20px;
       z-index: 100;
     }
-    
+
     .header-left, .header-right {
       display: flex;
       align-items: center;
       gap: 15px;
     }
-    
+
     .header-title {
       color: #fff;
       font-size: 18px;
       font-weight: 700;
       letter-spacing: -0.5px;
     }
-    
+
     .header-btn {
       background: rgba(255, 255, 255, 0.1);
       border: none;
@@ -78,21 +77,21 @@
       backdrop-filter: blur(10px);
       cursor: pointer;
     }
-    
+
     .header-btn:hover {
       background: rgba(255, 255, 255, 0.2);
       transform: scale(1.05);
     }
-    
+
     .header-btn:active {
       transform: scale(0.95);
     }
-    
+
     .header-btn.active {
       background: #1d9bf0;
       box-shadow: 0 0 20px rgba(29, 155, 240, 0.5);
     }
-    
+
     /* Controles principales */
     .controls-main {
       position: fixed;
@@ -104,7 +103,7 @@
       gap: 30px;
       z-index: 100;
     }
-    
+
     .mode-selector {
       display: flex;
       background: rgba(0, 0, 0, 0.8);
@@ -113,7 +112,7 @@
       backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    
+
     .mode-btn {
       background: transparent;
       border: none;
@@ -125,13 +124,13 @@
       transition: all 0.3s ease;
       cursor: pointer;
     }
-    
+
     .mode-btn.active {
       background: #1d9bf0;
       color: #fff;
       transform: scale(1.02);
     }
-    
+
     /* Botón de captura principal */
     #captureButton {
       width: 80px;
@@ -146,7 +145,7 @@
       position: relative;
       cursor: pointer;
     }
-    
+
     .capture-inner {
       width: 60px;
       height: 60px;
@@ -154,26 +153,26 @@
       border-radius: 50%;
       transition: all 0.3s ease;
     }
-    
+
     /* Estados del botón de captura */
     #captureButton.recording {
       border-color: #ff0040;
       animation: pulse 1.5s infinite;
     }
-    
+
     #captureButton.recording .capture-inner {
       background: #ff0040;
       border-radius: 8px;
       width: 40px;
       height: 40px;
     }
-    
+
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 rgba(255, 0, 64, 0.7); }
       70% { box-shadow: 0 0 0 10px rgba(255, 0, 64, 0); }
       100% { box-shadow: 0 0 0 0 rgba(255, 0, 64, 0); }
     }
-    
+
     /* Timer de grabación */
     .recording-timer {
       position: fixed;
@@ -193,11 +192,11 @@
       z-index: 100;
       animation: fadeInDown 0.3s ease;
     }
-    
+
     .recording-timer.active {
       display: flex;
     }
-    
+
     .timer-dot {
       width: 8px;
       height: 8px;
@@ -205,17 +204,22 @@
       border-radius: 50%;
       animation: blink 1s infinite;
     }
-    
+
     @keyframes blink {
       0%, 50% { opacity: 1; }
       51%, 100% { opacity: 0.3; }
     }
-    
+
     @keyframes fadeInDown {
       from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
       to { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
-    
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     /* Barra de progreso circular */
     .circular-progress {
       position: absolute;
@@ -227,17 +231,17 @@
       transition: opacity 0.3s ease;
       pointer-events: none;
     }
-    
+
     .circular-progress.active {
       opacity: 1;
     }
-    
+
     .progress-ring {
       width: 88px;
       height: 88px;
       transform: rotate(-90deg);
     }
-    
+
     .progress-ring-circle {
       fill: transparent;
       stroke: #ff0040;
@@ -248,7 +252,7 @@
       transition: stroke-dashoffset 0.1s linear;
       filter: drop-shadow(0 0 6px rgba(255, 0, 64, 0.8));
     }
-    
+
     /* Cronómetro cuenta regresiva estilo TikTok */
     .countdown-overlay {
       position: fixed;
@@ -265,11 +269,11 @@
       backdrop-filter: blur(20px);
       border: 2px solid rgba(255, 255, 255, 0.2);
     }
-    
+
     .countdown-overlay.active {
       display: flex;
     }
-    
+
     .countdown-number {
       font-size: 48px;
       font-weight: 900;
@@ -277,13 +281,13 @@
       text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
       animation: countdownPulse 1s ease infinite;
     }
-    
+
     @keyframes countdownPulse {
       0% { transform: scale(1); opacity: 1; }
       50% { transform: scale(1.2); opacity: 0.8; }
       100% { transform: scale(1); opacity: 1; }
     }
-    
+
     /* Controles de música - solo en video */
     .music-controls {
       position: fixed;
@@ -294,11 +298,11 @@
       gap: 10px;
       z-index: 100;
     }
-    
+
     .music-controls.video-mode {
       display: flex;
     }
-    
+
     .music-btn {
       background: rgba(0, 0, 0, 0.8);
       border: none;
@@ -315,47 +319,51 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
       cursor: pointer;
     }
-    
+
     .music-btn:hover {
       background: rgba(255, 255, 255, 0.2);
       transform: scale(1.05);
     }
-    
+
     .music-btn.active {
       background: #1d9bf0;
       box-shadow: 0 0 20px rgba(29, 155, 240, 0.5);
     }
-    
+
     .music-info {
       position: fixed;
-      bottom: 160px;
+      top: 80px;
       left: 20px;
       right: 20px;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(29, 155, 240, 0.95);
       color: #fff;
-      padding: 15px;
-      border-radius: 15px;
+      padding: 12px 20px;
+      border-radius: 25px;
       backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       display: none;
       align-items: center;
       gap: 15px;
-      z-index: 100;
+      z-index: 150;
+      transform: translateY(-100%);
+      transition: transform 0.3s ease;
+      box-shadow: 0 4px 20px rgba(29, 155, 240, 0.3);
     }
-    
+
     .music-info.active {
       display: flex;
+      transform: translateY(0);
     }
-    
+
     .music-waveform {
       flex: 1;
-      height: 30px;
-      background: linear-gradient(90deg, #1d9bf0, #ff0040);
-      border-radius: 15px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
       position: relative;
       overflow: hidden;
     }
-    
+
     .music-waveform::before {
       content: '';
       position: absolute;
@@ -363,24 +371,29 @@
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
       animation: waveAnimation 2s linear infinite;
     }
-    
+
     @keyframes waveAnimation {
       0% { left: -100%; }
       100% { left: 100%; }
     }
-    
+
     .music-title {
       font-size: 14px;
-      font-weight: 600;
-      max-width: 150px;
+      font-weight: 700;
+      max-width: 180px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    
+
+    .music-title::before {
+      content: '🎵 ';
+      margin-right: 5px;
+    }
+
     /* Cuadrícula */
     .grid-overlay {
       position: fixed;
@@ -393,22 +406,22 @@
       z-index: 50;
       transition: opacity 0.3s ease;
     }
-    
+
     .grid-overlay.active {
       opacity: 1;
     }
-    
+
     .grid-overlay svg {
       width: 100%;
       height: 100%;
     }
-    
+
     .grid-line {
       stroke: rgba(255, 255, 255, 0.5);
       stroke-width: 1;
       stroke-dasharray: 5, 5;
     }
-    
+
     /* Panel de filtros */
     .filters-panel {
       position: fixed;
@@ -427,17 +440,17 @@
       padding: 10px 0;
       z-index: 50;
     }
-    
+
     .filters-panel::-webkit-scrollbar {
       display: none;
     }
-    
+
     .filters-container {
       display: flex;
       gap: 15px;
       padding: 0 20px;
     }
-    
+
     .filter-btn {
       width: 60px;
       height: 60px;
@@ -458,7 +471,7 @@
       overflow: hidden;
       cursor: pointer;
     }
-    
+
     .filter-btn::before {
       content: '';
       position: absolute;
@@ -469,19 +482,19 @@
       background: rgba(0, 0, 0, 0.3);
       z-index: 1;
     }
-    
+
     .filter-btn span {
       position: relative;
       z-index: 2;
       font-weight: 600;
     }
-    
+
     .filter-btn.active {
       border-color: #1d9bf0;
       transform: scale(1.1);
       box-shadow: 0 0 20px rgba(29, 155, 240, 0.6);
     }
-    
+
     /* Notificaciones */
     .notification {
       position: fixed;
@@ -498,11 +511,11 @@
       z-index: 200;
       backdrop-filter: blur(20px);
     }
-    
+
     .notification.show {
       transform: translateX(0);
     }
-    
+
     /* Efectos visuales */
     .flash-effect {
       position: fixed;
@@ -515,17 +528,17 @@
       z-index: 1000;
       pointer-events: none;
     }
-    
+
     .flash-effect.active {
       animation: flashAnimation 0.2s ease;
     }
-    
+
     @keyframes flashAnimation {
       0% { opacity: 0; }
       50% { opacity: 0.8; }
       100% { opacity: 0; }
     }
-    
+
     /* Indicador de cronómetro activo */
     .timer-indicator {
       position: fixed;
@@ -544,39 +557,39 @@
       z-index: 100;
       animation: fadeInDown 0.3s ease;
     }
-    
+
     .timer-indicator.active {
       display: flex;
     }
-    
+
     .timer-indicator i {
       animation: blink 1s infinite;
     }
-    
+
     /* Media queries para responsive */
     @media (max-width: 480px) {
       .header {
         padding: 0 15px;
       }
-      
+
       .controls-main {
         gap: 20px;
       }
-      
+
       #captureButton {
         width: 70px;
         height: 70px;
       }
-      
+
       .capture-inner {
         width: 50px;
         height: 50px;
       }
-      
+
       .filters-container {
         padding: 0 15px;
       }
-      
+
       .countdown-number {
         font-size: 80px;
       }
@@ -650,7 +663,7 @@
         <button class="mode-btn active" data-mode="photo">FOTO</button>
         <button class="mode-btn" data-mode="video">VIDEO</button>
       </div>
-      
+
       <button id="captureButton">
         <div class="capture-inner"></div>
         <div class="circular-progress" id="circularProgress">
@@ -678,7 +691,7 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-  
+
   <script>
     // Configuración Firebase
     const firebaseConfig = {
@@ -731,20 +744,20 @@
 
     // Sonidos (Web Audio API)
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    
+
     function createBeep(frequency, duration, type = 'sine') {
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
+
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
+
       oscillator.frequency.value = frequency;
       oscillator.type = type;
-      
+
       gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-      
+
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + duration);
     }
@@ -771,27 +784,33 @@
       createBeep(1500, 0.4);
     }
 
-    // Flash solo disponible en cámara frontal
+    // Flash disponible en cámara trasera principalmente
     async function checkAutoFlash() {
       const flashBtn = document.getElementById('flash');
-      if (facingMode === 'user') {
+      
+      // Flash principalmente para cámara trasera
+      if (facingMode === 'environment') {
         flashBtn.style.display = 'flex';
-        flashEnabled = true;
-        flashBtn.classList.add('active');
         if (currentStream) {
           const track = currentStream.getVideoTracks()[0];
-          try {
-            await track.applyConstraints({ advanced: [{ torch: true }] });
-          } catch (err) {
-            console.log('Flash no disponible en cámara frontal');
+          const capabilities = track.getCapabilities();
+          
+          if (capabilities.torch) {
+            flashBtn.style.opacity = '1';
+            flashBtn.disabled = false;
+          } else {
+            flashBtn.style.opacity = '0.5';
+            flashBtn.disabled = true;
             flashEnabled = false;
             flashBtn.classList.remove('active');
           }
         }
       } else {
-        flashBtn.style.display = 'none';
-        flashEnabled = false;
-        flashBtn.classList.remove('active');
+        // Para cámara frontal, mostrar pero con funcionalidad limitada
+        flashBtn.style.display = 'flex';
+        flashBtn.style.opacity = '0.7';
+        flashBtn.disabled = false;
+        // En cámara frontal usamos flash de pantalla
       }
     }
 
@@ -806,14 +825,14 @@
           },
           audio: currentMode === 'video'
         };
-        
+
         if (currentStream) {
           currentStream.getTracks().forEach(track => track.stop());
         }
-        
+
         currentStream = await navigator.mediaDevices.getUserMedia(constraints);
         camera.srcObject = currentStream;
-        
+
         // Configurar MediaRecorder para video
         if (currentMode === 'video') {
           setupMediaRecorder();
@@ -831,44 +850,70 @@
     function setupMediaRecorder() {
       if (currentStream && currentMode === 'video') {
         recordedChunks = [];
-        
-        // Crear stream combinado con audio de fondo si existe
+
+        // Crear stream para grabación
         let finalStream = currentStream;
-        
-        if (backgroundMusic && musicPlaying) {
-          const audioContext = new AudioContext();
-          const destination = audioContext.createMediaStreamDestination();
-          
-          // Audio de la cámara
-          if (currentStream.getAudioTracks().length > 0) {
-            const micSource = audioContext.createMediaStreamSource(currentStream);
-            micSource.connect(destination);
+
+        // Si hay música de fondo, crear AudioContext para mezclar
+        if (backgroundMusic) {
+          try {
+            const audioContext = new AudioContext();
+            const destination = audioContext.createMediaStreamDestination();
+
+            // Audio del micrófono
+            if (currentStream.getAudioTracks().length > 0) {
+              const micSource = audioContext.createMediaStreamSource(currentStream);
+              const micGain = audioContext.createGain();
+              micGain.gain.value = 0.7; // Reducir volumen del micrófono
+              micSource.connect(micGain);
+              micGain.connect(destination);
+            }
+
+            // Audio de fondo (si está reproduciéndose)
+            if (backgroundMusicElement.src && !backgroundMusicElement.paused) {
+              const musicSource = audioContext.createMediaElementSource(backgroundMusicElement);
+              const musicGain = audioContext.createGain();
+              musicGain.gain.value = 0.5; // Volumen de música de fondo
+              musicSource.connect(musicGain);
+              musicGain.connect(destination);
+              // También conectar a la salida para que se escuche
+              musicGain.connect(audioContext.destination);
+            }
+
+            // Combinar video con audio mixeado
+            const videoTrack = currentStream.getVideoTracks()[0];
+            finalStream = new MediaStream([videoTrack, ...destination.stream.getAudioTracks()]);
+          } catch (error) {
+            console.log('Error mezclando audio, usando stream original:', error);
+            finalStream = currentStream;
           }
-          
-          // Audio de fondo
-          const musicSource = audioContext.createMediaElementSource(backgroundMusicElement);
-          musicSource.connect(destination);
-          musicSource.connect(audioContext.destination);
-          
-          // Combinar video con audio mixeado
-          const videoTrack = currentStream.getVideoTracks()[0];
-          finalStream = new MediaStream([videoTrack, ...destination.stream.getAudioTracks()]);
         }
-        
-        mediaRecorder = new MediaRecorder(finalStream, {
-          mimeType: 'video/webm;codecs=vp9'
-        });
-        
+
+        // Configurar MediaRecorder con mejor compatibilidad
+        const options = { mimeType: 'video/webm' };
+        if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
+          options.mimeType = 'video/webm;codecs=vp9,opus';
+        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+          options.mimeType = 'video/webm;codecs=vp8,opus';
+        }
+
+        mediaRecorder = new MediaRecorder(finalStream, options);
+
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
             recordedChunks.push(event.data);
           }
         };
-        
+
         mediaRecorder.onstop = () => {
           const blob = new Blob(recordedChunks, { type: 'video/webm' });
           downloadFile(blob, 'video_' + new Date().getTime() + '.webm');
           recordedChunks = [];
+        };
+
+        mediaRecorder.onerror = (event) => {
+          console.error('Error en MediaRecorder:', event.error);
+          showNotification('Error al grabar video');
         };
       }
     }
@@ -877,11 +922,11 @@
     document.querySelectorAll('.mode-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         if (isRecording) return;
-        
+
         document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentMode = btn.dataset.mode;
-        
+
         // Mostrar/ocultar controles de música
         const musicControls = document.querySelector('.music-controls');
         if (currentMode === 'video') {
@@ -889,7 +934,7 @@
         } else {
           musicControls.classList.remove('video-mode');
         }
-        
+
         initCamera();
       });
     });
@@ -903,17 +948,34 @@
 
     // Flash
     document.getElementById('flash').addEventListener('click', async () => {
+      if (document.getElementById('flash').disabled) return;
+      
       flashEnabled = !flashEnabled;
       document.getElementById('flash').classList.toggle('active', flashEnabled);
-      
+
       if (currentStream) {
         const track = currentStream.getVideoTracks()[0];
-        try {
-          await track.applyConstraints({ advanced: [{ torch: flashEnabled }] });
-        } catch (err) {
-          console.error('Flash no soportado:', err);
-          flashEnabled = false;
-          document.getElementById('flash').classList.remove('active');
+        
+        if (facingMode === 'environment') {
+          // Cámara trasera - usar torch real
+          try {
+            await track.applyConstraints({ 
+              advanced: [{ torch: flashEnabled }] 
+            });
+            showNotification(flashEnabled ? 'Flash activado' : 'Flash desactivado');
+          } catch (err) {
+            console.error('Flash no soportado:', err);
+            flashEnabled = false;
+            document.getElementById('flash').classList.remove('active');
+            showNotification('Flash no disponible en este dispositivo');
+          }
+        } else {
+          // Cámara frontal - usar flash de pantalla
+          if (flashEnabled) {
+            showNotification('Flash de pantalla activado');
+          } else {
+            showNotification('Flash de pantalla desactivado');
+          }
         }
       }
     });
@@ -928,15 +990,15 @@
     // Cronómetro toggle
     const timerOptions = [0, 3, 5, 10]; // Opciones de tiempo
     let currentTimerIndex = 0;
-    
-    document.getElementById('timerToggle').addEventListener('click', () => {
+
+document.getElementById('timerToggle').addEventListener('click', () => {
       currentTimerIndex = (currentTimerIndex + 1) % timerOptions.length;
       countdownTime = timerOptions[currentTimerIndex];
-      
+
       const timerBtn = document.getElementById('timerToggle');
       const timerIndicator = document.getElementById('timerIndicator');
       const timerIndicatorText = document.getElementById('timerIndicatorText');
-      
+
       if (countdownTime === 0) {
         timerBtn.classList.remove('active');
         timerIndicator.classList.remove('active');
@@ -951,23 +1013,28 @@
 
     // Controles de música
     document.getElementById('musicUpload').addEventListener('click', () => {
-      musicFileInput.click();
+      document.getElementById('musicFileInput').click();
     });
 
+    // Play/pause música
     document.getElementById('musicPlay').addEventListener('click', () => {
       if (backgroundMusic) {
         if (musicPlaying) {
           backgroundMusicElement.pause();
           musicPlaying = false;
           document.getElementById('musicPlay').innerHTML = '<i class="fas fa-play"></i>';
-          document.getElementById('musicPlay').classList.remove('active');
           musicInfo.classList.remove('active');
         } else {
-          backgroundMusicElement.play();
-          musicPlaying = true;
-          document.getElementById('musicPlay').innerHTML = '<i class="fas fa-pause"></i>';
-          document.getElementById('musicPlay').classList.add('active');
-          musicInfo.classList.add('active');
+          const playPromise = backgroundMusicElement.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              musicPlaying = true;
+              document.getElementById('musicPlay').innerHTML = '<i class="fas fa-pause"></i>';
+              musicInfo.classList.add('active');
+            }).catch((err) => {
+              console.log('Error al reproducir música:', err);
+            });
+          }
         }
       }
     });
@@ -979,12 +1046,32 @@
         const url = URL.createObjectURL(file);
         backgroundMusicElement.src = url;
         backgroundMusic = url;
+
+        // Animación estilo Twitter para música cargada
+        const musicUploadBtn = document.getElementById('musicUpload');
+        musicUploadBtn.style.transform = 'scale(0.8)';
+        musicUploadBtn.style.background = '#1d9bf0';
         
+        setTimeout(() => {
+          musicUploadBtn.style.transform = 'scale(1.1)';
+          setTimeout(() => {
+            musicUploadBtn.style.transform = 'scale(1)';
+          }, 200);
+        }, 100);
+
         musicTitle.textContent = file.name.replace(/\.[^/.]+$/, "");
         document.getElementById('musicPlay').style.display = 'flex';
-        document.getElementById('musicUpload').classList.add('active');
+        musicUploadBtn.classList.add('active');
         
-        showNotification('Música cargada: ' + file.name);
+        // Mostrar notificación de música estilo Twitter
+        musicInfo.classList.add('active');
+        
+        // Auto-ocultar después de 4 segundos
+        setTimeout(() => {
+          musicInfo.classList.remove('active');
+        }, 4000);
+
+        showNotification('✅ Música cargada correctamente');
       }
     });
 
@@ -1022,8 +1109,10 @@
     // Captura principal
     captureButton.addEventListener('mousedown', handleCaptureStart);
     captureButton.addEventListener('mouseup', handleCaptureEnd);
+    captureButton.addEventListener('mouseleave', handleCaptureEnd);
     captureButton.addEventListener('touchstart', handleCaptureStart);
     captureButton.addEventListener('touchend', handleCaptureEnd);
+    captureButton.addEventListener('touchcancel', handleCaptureEnd);
 
     function handleCaptureStart(e) {
       e.preventDefault();
@@ -1053,18 +1142,18 @@
       canvas.width = camera.videoWidth;
       canvas.height = camera.videoHeight;
       const context = canvas.getContext('2d');
-      
+
       context.filter = window.getComputedStyle(camera).filter;
       context.drawImage(camera, 0, 0, canvas.width, canvas.height);
-      
+
       const image = canvas.toDataURL('image/jpeg', 0.95);
       downloadFile(dataURLtoBlob(image), 'foto_' + new Date().getTime() + '.jpg');
-      
+
       // Efectos
       playShutterSound();
       showFlashEffect();
       showNotification('Foto guardada');
-      
+
       // Animación del botón
       captureButton.style.transform = 'scale(0.9)';
       setTimeout(() => { captureButton.style.transform = 'scale(1)'; }, 150);
@@ -1073,58 +1162,81 @@
     // Iniciar grabación
     function startRecording() {
       if (!mediaRecorder || mediaRecorder.state === 'recording') return;
-      
+
       isRecording = true;
       recordingStartTime = Date.now();
-      
+
       captureButton.classList.add('recording');
       recordingTimer.classList.add('active');
       circularProgress.classList.add('active');
-      
-      // Iniciar música de fondo si está disponible
-      if (backgroundMusic && !musicPlaying) {
-        backgroundMusicElement.play();
-        musicPlaying = true;
-        musicInfo.classList.add('active');
+
+      // Auto-iniciar música si hay una cargada
+      if (backgroundMusic && backgroundMusicElement.src) {
+        if (!musicPlaying || backgroundMusicElement.paused) {
+          backgroundMusicElement.currentTime = 0; // Reiniciar desde el inicio
+          const playPromise = backgroundMusicElement.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              musicPlaying = true;
+              document.getElementById('musicPlay').innerHTML = '<i class="fas fa-pause"></i>';
+              // Mostrar info de música brevemente durante grabación
+              musicInfo.classList.add('active');
+              setTimeout(() => {
+                musicInfo.classList.remove('active');
+              }, 2000);
+              showNotification('🎵 Grabando con música');
+            }).catch((err) => {
+              console.log('Error al reproducir música:', err);
+              showNotification('Grabando sin música');
+            });
+          }
+        } else {
+          // Mostrar info de música brevemente durante grabación
+          musicInfo.classList.add('active');
+          setTimeout(() => {
+            musicInfo.classList.remove('active');
+          }, 2000);
+          showNotification('🎵 Grabando con música');
+        }
+      } else {
+        showNotification('📹 Grabando video');
       }
-      
+
       mediaRecorder.start();
       playStartRecordingSound();
-      
+
       // Timer
       timerInterval = setInterval(updateTimer, 100);
-      
+
       // Progress bar circular
       progressInterval = setInterval(updateCircularProgress, 100);
-      
+
       // Auto-stop después del tiempo máximo
       setTimeout(() => {
         if (isRecording) stopRecording();
       }, maxRecordingTime);
-      
-      showNotification('Grabación iniciada');
     }
 
     // Detener grabación
     function stopRecording() {
       if (!isRecording) return;
-      
+
       isRecording = false;
-      
+
       captureButton.classList.remove('recording');
       recordingTimer.classList.remove('active');
       circularProgress.classList.remove('active');
-      
+
       if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.stop();
       }
-      
+
       clearInterval(timerInterval);
       clearInterval(progressInterval);
-      
+
       // Reset circular progress
       progressRingCircle.style.strokeDashoffset = '276.46';
-      
+
       playStopRecordingSound();
       showNotification('Video guardado');
     }
@@ -1190,22 +1302,22 @@
     function renderFilterButton(filterId, filterData) {
       const btn = document.createElement('button');
       btn.classList.add('filter-btn');
-      
+
       if (filterData.imagen) {
         btn.style.backgroundImage = `url(${filterData.imagen})`;
       } else {
         btn.style.backgroundColor = '#333';
       }
-      
+
       btn.innerHTML = `<span>${filterData.nombre}</span>`;
-      
+
       btn.addEventListener('click', () => {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentFilterCss = filterData.css || 'none';
         applyFilter();
       });
-      
+
       return btn;
     }
 
@@ -1215,7 +1327,7 @@
         const data = snapshot.val();
         const container = document.getElementById('filtersContainer');
         container.innerHTML = '';
-        
+
         if (data) {
           Object.keys(data).forEach(filterId => {
             const btn = renderFilterButton(filterId, data[filterId]);
