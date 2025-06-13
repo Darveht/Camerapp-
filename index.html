@@ -76,6 +76,7 @@
       font-size: 16px;
       transition: all 0.2s ease;
       backdrop-filter: blur(10px);
+      cursor: pointer;
     }
     
     .header-btn:hover {
@@ -248,6 +249,131 @@
       filter: drop-shadow(0 0 6px rgba(255, 0, 64, 0.8));
     }
     
+    /* Cronómetro cuenta regresiva */
+    .countdown-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+    }
+    
+    .countdown-overlay.active {
+      display: flex;
+    }
+    
+    .countdown-number {
+      font-size: 120px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+      animation: countdownPulse 1s ease infinite;
+    }
+    
+    @keyframes countdownPulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    /* Controles de música */
+    .music-controls {
+      position: fixed;
+      top: 70px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 100;
+    }
+    
+    .music-btn {
+      background: rgba(0, 0, 0, 0.8);
+      border: none;
+      color: #fff;
+      width: 50px;
+      height: 50px;
+      border-radius: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+    }
+    
+    .music-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+    
+    .music-btn.active {
+      background: #1d9bf0;
+      box-shadow: 0 0 20px rgba(29, 155, 240, 0.5);
+    }
+    
+    .music-info {
+      position: fixed;
+      bottom: 160px;
+      left: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 15px;
+      border-radius: 15px;
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: none;
+      align-items: center;
+      gap: 15px;
+      z-index: 100;
+    }
+    
+    .music-info.active {
+      display: flex;
+    }
+    
+    .music-waveform {
+      flex: 1;
+      height: 30px;
+      background: linear-gradient(90deg, #1d9bf0, #ff0040);
+      border-radius: 15px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .music-waveform::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: waveAnimation 2s linear infinite;
+    }
+    
+    @keyframes waveAnimation {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    
+    .music-title {
+      font-size: 14px;
+      font-weight: 600;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
     /* Cuadrícula */
     .grid-overlay {
       position: fixed;
@@ -393,6 +519,40 @@
       100% { opacity: 0; }
     }
     
+    /* Cronómetro selector */
+    .timer-selector {
+      position: fixed;
+      bottom: 240px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 10px;
+      border-radius: 25px;
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 100;
+    }
+    
+    .timer-option {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .timer-option.active {
+      background: #1d9bf0;
+      border-color: #1d9bf0;
+      transform: scale(1.05);
+    }
+    
     /* Media queries para responsive */
     @media (max-width: 480px) {
       .header {
@@ -416,6 +576,10 @@
       .filters-container {
         padding: 0 15px;
       }
+      
+      .countdown-number {
+        font-size: 80px;
+      }
     }
   </style>
 </head>
@@ -423,6 +587,8 @@
   <div class="camera-app">
     <video id="camera" autoplay playsinline muted></video>
     <canvas id="canvas" style="display: none;"></canvas>
+    <audio id="backgroundMusic" loop style="display: none;"></audio>
+    <input type="file" id="musicFileInput" accept="audio/*" style="display: none;">
 
     <!-- Header estilo Twitter -->
     <div class="header">
@@ -436,10 +602,27 @@
       </div>
     </div>
 
+    <!-- Controles de música -->
+    <div class="music-controls">
+      <button id="musicUpload" class="music-btn" title="Subir música"><i class="fas fa-music"></i></button>
+      <button id="musicPlay" class="music-btn" title="Reproducir/Pausar música" style="display: none;"><i class="fas fa-play"></i></button>
+    </div>
+
+    <!-- Información de música -->
+    <div class="music-info" id="musicInfo">
+      <div class="music-title" id="musicTitle">Sin música</div>
+      <div class="music-waveform"></div>
+    </div>
+
     <!-- Timer de grabación -->
     <div class="recording-timer" id="recordingTimer">
       <div class="timer-dot"></div>
       <span id="timerText">00:00</span>
+    </div>
+
+    <!-- Cronómetro cuenta regresiva -->
+    <div class="countdown-overlay" id="countdownOverlay">
+      <div class="countdown-number" id="countdownNumber">3</div>
     </div>
 
     <!-- Cuadrícula -->
@@ -452,6 +635,14 @@
         <line class="grid-line" x1="0%" y1="33.33%" x2="100%" y2="33.33%"></line>
         <line class="grid-line" x1="0%" y1="66.66%" x2="100%" y2="66.66%"></line>
       </svg>
+    </div>
+
+    <!-- Selector de cronómetro -->
+    <div class="timer-selector" id="timerSelector">
+      <button class="timer-option active" data-timer="0">SIN</button>
+      <button class="timer-option" data-timer="3">3s</button>
+      <button class="timer-option" data-timer="5">5s</button>
+      <button class="timer-option" data-timer="10">10s</button>
     </div>
 
     <!-- Controles principales -->
@@ -517,6 +708,10 @@
     let progressInterval;
     let currentMode = 'photo';
     let maxRecordingTime = 60000; // 60 segundos
+    let countdownTime = 0; // Tiempo de cuenta regresiva
+    let backgroundMusic = null;
+    let musicPlaying = false;
+    let currentMusicFile = null;
 
     // Elementos DOM
     const camera = document.getElementById('camera');
@@ -528,6 +723,12 @@
     const flashEffect = document.getElementById('flashEffect');
     const notification = document.getElementById('notification');
     const gridOverlay = document.getElementById('gridOverlay');
+    const countdownOverlay = document.getElementById('countdownOverlay');
+    const countdownNumber = document.getElementById('countdownNumber');
+    const backgroundMusicElement = document.getElementById('backgroundMusic');
+    const musicFileInput = document.getElementById('musicFileInput');
+    const musicInfo = document.getElementById('musicInfo');
+    const musicTitle = document.getElementById('musicTitle');
 
     // Sonidos (Web Audio API)
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -563,6 +764,34 @@
       setTimeout(() => createBeep(600, 0.15), 100);
     }
 
+    function playCountdownSound() {
+      createBeep(1200, 0.2);
+    }
+
+    function playFinalCountdownSound() {
+      createBeep(1500, 0.4);
+    }
+
+    // Activar flash automáticamente para cámara frontal
+    async function checkAutoFlash() {
+      if (facingMode === 'user') {
+        flashEnabled = true;
+        document.getElementById('flash').classList.add('active');
+        if (currentStream) {
+          const track = currentStream.getVideoTracks()[0];
+          try {
+            await track.applyConstraints({ advanced: [{ torch: true }] });
+          } catch (err) {
+            console.log('Flash no disponible en cámara frontal');
+            flashEnabled = false;
+            document.getElementById('flash').classList.remove('active');
+          }
+        }
+      } else {
+        // Mantener el estado actual del flash para cámara trasera
+      }
+    }
+
     // Inicializar cámara
     async function initCamera() {
       try {
@@ -586,6 +815,9 @@
         if (currentMode === 'video') {
           setupMediaRecorder();
         }
+
+        // Verificar auto-flash
+        await checkAutoFlash();
       } catch (err) {
         console.error('Error al acceder a la cámara:', err);
         showNotification('Error al acceder a la cámara');
@@ -596,7 +828,31 @@
     function setupMediaRecorder() {
       if (currentStream && currentMode === 'video') {
         recordedChunks = [];
-        mediaRecorder = new MediaRecorder(currentStream, {
+        
+        // Crear stream combinado con audio de fondo si existe
+        let finalStream = currentStream;
+        
+        if (backgroundMusic && musicPlaying) {
+          const audioContext = new AudioContext();
+          const destination = audioContext.createMediaStreamDestination();
+          
+          // Audio de la cámara
+          if (currentStream.getAudioTracks().length > 0) {
+            const micSource = audioContext.createMediaStreamSource(currentStream);
+            micSource.connect(destination);
+          }
+          
+          // Audio de fondo
+          const musicSource = audioContext.createMediaElementSource(backgroundMusicElement);
+          musicSource.connect(destination);
+          musicSource.connect(audioContext.destination);
+          
+          // Combinar video con audio mixeado
+          const videoTrack = currentStream.getVideoTracks()[0];
+          finalStream = new MediaStream([videoTrack, ...destination.stream.getAudioTracks()]);
+        }
+        
+        mediaRecorder = new MediaRecorder(finalStream, {
           mimeType: 'video/webm;codecs=vp9'
         });
         
@@ -658,9 +914,87 @@
       showNotification(gridOverlay.classList.contains('active') ? 'Cuadrícula activada' : 'Cuadrícula desactivada');
     });
 
+    // Selector de cronómetro
+    document.querySelectorAll('.timer-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.timer-option').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        countdownTime = parseInt(btn.dataset.timer);
+        showNotification(countdownTime === 0 ? 'Cronómetro desactivado' : `Cronómetro: ${countdownTime}s`);
+      });
+    });
+
+    // Controles de música
+    document.getElementById('musicUpload').addEventListener('click', () => {
+      musicFileInput.click();
+    });
+
+    document.getElementById('musicPlay').addEventListener('click', () => {
+      if (backgroundMusic) {
+        if (musicPlaying) {
+          backgroundMusicElement.pause();
+          musicPlaying = false;
+          document.getElementById('musicPlay').innerHTML = '<i class="fas fa-play"></i>';
+          document.getElementById('musicPlay').classList.remove('active');
+          musicInfo.classList.remove('active');
+        } else {
+          backgroundMusicElement.play();
+          musicPlaying = true;
+          document.getElementById('musicPlay').innerHTML = '<i class="fas fa-pause"></i>';
+          document.getElementById('musicPlay').classList.add('active');
+          musicInfo.classList.add('active');
+        }
+      }
+    });
+
+    musicFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file && file.type.startsWith('audio/')) {
+        currentMusicFile = file;
+        const url = URL.createObjectURL(file);
+        backgroundMusicElement.src = url;
+        backgroundMusic = url;
+        
+        musicTitle.textContent = file.name.replace(/\.[^/.]+$/, "");
+        document.getElementById('musicPlay').style.display = 'flex';
+        document.getElementById('musicUpload').classList.add('active');
+        
+        showNotification('Música cargada: ' + file.name);
+      }
+    });
+
     // Aplicar filtro
     function applyFilter() {
       camera.style.filter = currentFilterCss;
+    }
+
+    // Cuenta regresiva
+    function startCountdown(callback) {
+      if (countdownTime === 0) {
+        callback();
+        return;
+      }
+
+      let count = countdownTime;
+      countdownOverlay.classList.add('active');
+      countdownNumber.textContent = count;
+      playCountdownSound();
+
+      const countdownInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          countdownNumber.textContent = count;
+          playCountdownSound();
+        } else {
+          countdownNumber.textContent = 'GO!';
+          playFinalCountdownSound();
+          setTimeout(() => {
+            countdownOverlay.classList.remove('active');
+            callback();
+          }, 500);
+          clearInterval(countdownInterval);
+        }
+      }, 1000);
     }
 
     // Captura principal
@@ -672,10 +1006,14 @@
     function handleCaptureStart(e) {
       e.preventDefault();
       if (currentMode === 'photo') {
-        takePhoto();
+        startCountdown(() => {
+          takePhoto();
+        });
       } else {
         if (!isRecording) {
-          startRecording();
+          startCountdown(() => {
+            startRecording();
+          });
         }
       }
     }
@@ -720,6 +1058,13 @@
       captureButton.classList.add('recording');
       recordingTimer.classList.add('active');
       circularProgress.classList.add('active');
+      
+      // Iniciar música de fondo si está disponible
+      if (backgroundMusic && !musicPlaying) {
+        backgroundMusicElement.play();
+        musicPlaying = true;
+        musicInfo.classList.add('active');
+      }
       
       mediaRecorder.start();
       playStartRecordingSound();
