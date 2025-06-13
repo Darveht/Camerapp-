@@ -220,37 +220,103 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Barra de progreso circular */
+    /* Barra de progreso circular estilo Twitter */
     .circular-progress {
       position: absolute;
-      top: -4px;
-      left: -4px;
-      width: 88px;
-      height: 88px;
+      top: -8px;
+      left: -8px;
+      width: 96px;
+      height: 96px;
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: all 0.4s ease;
       pointer-events: none;
+      transform: scale(0.8);
     }
 
     .circular-progress.active {
       opacity: 1;
+      transform: scale(1);
+      animation: progressPulse 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes progressPulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.02); }
     }
 
     .progress-ring {
-      width: 88px;
-      height: 88px;
+      width: 96px;
+      height: 96px;
       transform: rotate(-90deg);
+    }
+
+    .progress-ring-background {
+      fill: transparent;
+      stroke: rgba(255, 255, 255, 0.1);
+      stroke-width: 3;
+      stroke-dasharray: none;
     }
 
     .progress-ring-circle {
       fill: transparent;
-      stroke: #ff0040;
+      stroke: #1d9bf0;
       stroke-width: 4;
       stroke-linecap: round;
-      stroke-dasharray: 276.46;
-      stroke-dashoffset: 276.46;
-      transition: stroke-dashoffset 0.1s linear;
-      filter: drop-shadow(0 0 6px rgba(255, 0, 64, 0.8));
+      stroke-dasharray: 301.59;
+      stroke-dashoffset: 301.59;
+      transition: stroke-dashoffset 0.2s ease-out;
+      filter: drop-shadow(0 0 8px rgba(29, 155, 240, 0.6));
+      animation: progressGlow 1.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes progressGlow {
+      0% { 
+        stroke: #1d9bf0;
+        filter: drop-shadow(0 0 8px rgba(29, 155, 240, 0.6)); 
+      }
+      100% { 
+        stroke: #00d4ff;
+        filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.8)); 
+      }
+    }
+
+    /* Efecto de agua llenándose */
+    .progress-water-effect {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: linear-gradient(45deg, rgba(29, 155, 240, 0.1), rgba(0, 212, 255, 0.2));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .circular-progress.active .progress-water-effect {
+      opacity: 1;
+      animation: waterFill 0.5s ease-out, waterWave 2s ease-in-out infinite;
+    }
+
+    @keyframes waterFill {
+      0% { 
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+      }
+      100% { 
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes waterWave {
+      0%, 100% { 
+        background: linear-gradient(45deg, rgba(29, 155, 240, 0.1), rgba(0, 212, 255, 0.2));
+      }
+      50% { 
+        background: linear-gradient(45deg, rgba(0, 212, 255, 0.2), rgba(29, 155, 240, 0.3));
+      }
     }
 
     /* Cronómetro cuenta regresiva estilo TikTok */
@@ -667,8 +733,10 @@
       <button id="captureButton">
         <div class="capture-inner"></div>
         <div class="circular-progress" id="circularProgress">
+          <div class="progress-water-effect"></div>
           <svg class="progress-ring">
-            <circle class="progress-ring-circle" cx="44" cy="44" r="44"></circle>
+            <circle class="progress-ring-background" cx="48" cy="48" r="48"></circle>
+            <circle class="progress-ring-circle" cx="48" cy="48" r="48"></circle>
           </svg>
         </div>
       </button>
@@ -890,43 +958,10 @@
       if (currentStream && currentMode === 'video') {
         recordedChunks = [];
 
-        // Crear stream para grabación
+        // Crear stream para grabación - Siempre incluir audio del micrófono
         let finalStream = currentStream;
 
-        // Si hay música de fondo, crear AudioContext para mezclar
-        if (backgroundMusic) {
-          try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const destination = audioContext.createMediaStreamDestination();
-
-            // Audio del micrófono
-            if (currentStream.getAudioTracks().length > 0) {
-              const micSource = audioContext.createMediaStreamSource(currentStream);
-              const micGain = audioContext.createGain();
-              micGain.gain.value = 0.7; // Reducir volumen del micrófono
-              micSource.connect(micGain);
-              micGain.connect(destination);
-            }
-
-            // Audio de fondo (si está reproduciéndose)
-            if (backgroundMusicElement.src && !backgroundMusicElement.paused) {
-              const musicSource = audioContext.createMediaElementSource(backgroundMusicElement);
-              const musicGain = audioContext.createGain();
-              musicGain.gain.value = 0.5; // Volumen de música de fondo
-              musicSource.connect(musicGain);
-              musicGain.connect(destination);
-              // También conectar a la salida para que se escuche
-              musicGain.connect(audioContext.destination);
-            }
-
-            // Combinar video con audio mixeado
-            const videoTrack = currentStream.getVideoTracks()[0];
-            finalStream = new MediaStream([videoTrack, ...destination.stream.getAudioTracks()]);
-          } catch (error) {
-            console.log('Error mezclando audio, usando stream original:', error);
-            finalStream = currentStream;
-          }
-        }
+        console.log('Configurando MediaRecorder con audio:', currentStream.getAudioTracks().length > 0);
 
         // Configurar MediaRecorder con máxima compatibilidad móvil
         let options = {};
@@ -1306,35 +1341,37 @@ document.getElementById('timerToggle').addEventListener('click', () => {
       recordingTimer.classList.add('active');
       circularProgress.classList.add('active');
 
-      // Auto-iniciar música si hay una cargada
+      // Auto-iniciar música si hay una cargada y asegurar reproducción
       if (backgroundMusic && backgroundMusicElement.src) {
-        if (!musicPlaying || backgroundMusicElement.paused) {
-          backgroundMusicElement.currentTime = 0; // Reiniciar desde el inicio
-          const playPromise = backgroundMusicElement.play();
-          if (playPromise !== undefined) {
-            playPromise.then(() => {
-              musicPlaying = true;
-              document.getElementById('musicPlay').innerHTML = '<i class="fas fa-pause"></i>';
-              // Mostrar info de música brevemente durante grabación
-              musicInfo.classList.add('active');
-              setTimeout(() => {
-                musicInfo.classList.remove('active');
-              }, 2000);
-              showNotification('🎵 Grabando con música');
-            }).catch((err) => {
-              console.log('Error al reproducir música:', err);
-              showNotification('Grabando sin música');
-            });
-          }
+        // Siempre reiniciar la música desde el inicio
+        backgroundMusicElement.currentTime = 0;
+        backgroundMusicElement.volume = 0.6; // Volumen moderado
+        
+        // Intentar reproducir la música
+        const playPromise = backgroundMusicElement.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            musicPlaying = true;
+            document.getElementById('musicPlay').innerHTML = '<i class="fas fa-pause"></i>';
+            
+            // Mostrar info de música con animación
+            musicInfo.classList.add('active');
+            setTimeout(() => {
+              musicInfo.classList.remove('active');
+            }, 3000);
+            
+            showNotification('🎵 Grabando con música');
+            console.log('Música iniciada correctamente durante grabación');
+          }).catch((err) => {
+            console.error('Error al reproducir música durante grabación:', err);
+            showNotification('⚠️ Grabando sin música (error de reproducción)');
+          });
         } else {
-          // Mostrar info de música brevemente durante grabación
-          musicInfo.classList.add('active');
-          setTimeout(() => {
-            musicInfo.classList.remove('active');
-          }, 2000);
-          showNotification('🎵 Grabando con música');
+          console.log('Play promise undefined');
+          showNotification('📹 Grabando video');
         }
       } else {
+        console.log('No hay música cargada');
         showNotification('📹 Grabando video');
       }
 
@@ -1371,7 +1408,7 @@ document.getElementById('timerToggle').addEventListener('click', () => {
       clearInterval(progressInterval);
 
       // Reset circular progress
-      progressRingCircle.style.strokeDashoffset = '276.46';
+      progressRingCircle.style.strokeDashoffset = '301.59';
 
       playStopRecordingSound();
       showNotification('Video guardado');
@@ -1385,13 +1422,18 @@ document.getElementById('timerToggle').addEventListener('click', () => {
       timerText.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
-    // Actualizar progress bar circular
+    // Actualizar progress bar circular con animación estilo Twitter
     function updateCircularProgress() {
       const elapsed = Date.now() - recordingStartTime;
-      const progress = (elapsed / maxRecordingTime);
-      const circumference = 276.46;
+      const progress = Math.min(elapsed / maxRecordingTime, 1);
+      const circumference = 301.59; // 2 * π * 48
       const offset = circumference - (progress * circumference);
+      
       progressRingCircle.style.strokeDashoffset = Math.max(offset, 0);
+      
+      // Cambiar color según el progreso
+      const hue = 200 - (progress * 60); // De azul (200) a cyan (140)
+      progressRingCircle.style.stroke = `hsl(${hue}, 100%, 60%)`;
     }
 
     // Efectos visuales
