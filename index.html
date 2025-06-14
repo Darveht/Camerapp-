@@ -1563,6 +1563,51 @@ document.getElementById('timerToggle').addEventListener('click', () => {
       URL.revokeObjectURL(url);
     }
 
+    // Base de datos de efectos expandida
+    const effectsDatabase = {
+      // Filtros básicos
+      'none': { name: 'Original', css: 'none', category: 'basic', icon: '🎯' },
+      'sepia': { name: 'Sepia', css: 'sepia(100%)', category: 'vintage', icon: '📸' },
+      'grayscale': { name: 'B&N', css: 'grayscale(100%)', category: 'artistic', icon: '⚫' },
+      'contrast': { name: 'Contraste', css: 'contrast(150%)', category: 'dramatic', icon: '🔆' },
+      'brightness': { name: 'Brillo', css: 'brightness(150%)', category: 'color', icon: '☀️' },
+      'blur': { name: 'Desenfoque', css: 'blur(5px)', category: 'artistic', icon: '🌫️' },
+      'vintage': { name: 'Vintage', css: 'sepia(80%) hue-rotate(-20deg)', category: 'vintage', icon: '📻' },
+      'warm': { name: 'Cálido', css: 'saturate(150%) hue-rotate(10deg)', category: 'color', icon: '🔥' },
+      'cold': { name: 'Frío', css: 'saturate(140%) hue-rotate(-10deg)', category: 'color', icon: '❄️' },
+      'dreamy': { name: 'Soñador', css: 'sepia(50%) hue-rotate(10deg) contrast(110%)', category: 'artistic', icon: '✨' },
+      'retro': { name: 'Retro', css: 'grayscale(50%) contrast(120%)', category: 'vintage', icon: '🕺' },
+      'cinema': { name: 'Cinema', css: 'contrast(130%) sepia(30%)', category: 'dramatic', icon: '🎬' },
+      'sunset': { name: 'Atardecer', css: 'sepia(70%) contrast(120%) hue-rotate(-10deg)', category: 'color', icon: '🌅' },
+      'dramatic': { name: 'Dramático', css: 'contrast(140%) saturate(150%)', category: 'dramatic', icon: '🎭' },
+      
+      // Efectos adicionales
+      'neon': { name: 'Neón', css: 'saturate(200%) contrast(150%) hue-rotate(90deg)', category: 'fun', icon: '🌈' },
+      'cyberpunk': { name: 'Cyberpunk', css: 'saturate(180%) contrast(130%) hue-rotate(270deg)', category: 'fun', icon: '🤖' },
+      'pastel': { name: 'Pastel', css: 'saturate(80%) brightness(120%) contrast(90%)', category: 'artistic', icon: '🎨' },
+      'noir': { name: 'Noir', css: 'grayscale(100%) contrast(150%) brightness(90%)', category: 'dramatic', icon: '🕴️' },
+      'tropical': { name: 'Tropical', css: 'saturate(160%) hue-rotate(30deg) brightness(110%)', category: 'color', icon: '🌺' },
+      'arctic': { name: 'Ártico', css: 'saturate(120%) hue-rotate(-30deg) brightness(120%)', category: 'color', icon: '🐧' },
+      'golden': { name: 'Dorado', css: 'sepia(60%) saturate(140%) hue-rotate(20deg)', category: 'vintage', icon: '🏆' },
+      'forest': { name: 'Bosque', css: 'saturate(130%) hue-rotate(80deg) contrast(110%)', category: 'color', icon: '🌲' },
+      'ocean': { name: 'Océano', css: 'saturate(140%) hue-rotate(180deg) contrast(105%)', category: 'color', icon: '🌊' },
+      'fire': { name: 'Fuego', css: 'saturate(170%) hue-rotate(-20deg) contrast(120%)', category: 'dramatic', icon: '🔥' },
+      'ethereal': { name: 'Etéreo', css: 'saturate(110%) brightness(115%) blur(0.5px)', category: 'artistic', icon: '👻' },
+      'pop': { name: 'Pop Art', css: 'saturate(200%) contrast(140%) hue-rotate(45deg)', category: 'fun', icon: '💥' },
+      'monochrome': { name: 'Monocromo', css: 'grayscale(100%) contrast(120%)', category: 'artistic', icon: '⬛' },
+      'vibrant': { name: 'Vibrante', css: 'saturate(180%) contrast(125%)', category: 'fun', icon: '🎉' },
+      'muted': { name: 'Suave', css: 'saturate(70%) brightness(95%)', category: 'artistic', icon: '🤍' },
+      'high-key': { name: 'High Key', css: 'brightness(130%) contrast(90%)', category: 'artistic', icon: '💡' },
+      'low-key': { name: 'Low Key', css: 'brightness(70%) contrast(130%)', category: 'dramatic', icon: '🌑' },
+      'polaroid': { name: 'Polaroid', css: 'sepia(40%) saturate(130%) contrast(110%)', category: 'vintage', icon: '📷' },
+      'film': { name: 'Película', css: 'sepia(20%) saturate(120%) contrast(105%)', category: 'vintage', icon: '🎞️' },
+      'instagram': { name: 'Retro', css: 'sepia(25%) saturate(140%) hue-rotate(-5deg)', category: 'vintage', icon: '📱' }
+    };
+
+    // Variables para búsqueda
+    let currentCategory = 'all';
+    let searchQuery = '';
+
     // Cargar filtros desde Firebase
     function renderFilterButton(filterId, filterData) {
       const btn = document.createElement('button');
@@ -1601,6 +1646,89 @@ document.getElementById('timerToggle').addEventListener('click', () => {
         }
       });
     }
+
+    // Modal de búsqueda de efectos
+    function openEffectsSearch() {
+      document.getElementById('effectsSearchModal').classList.add('active');
+      document.getElementById('searchInput').focus();
+      loadEffectsGrid();
+    }
+
+    function closeEffectsSearch() {
+      document.getElementById('effectsSearchModal').classList.remove('active');
+    }
+
+    function loadEffectsGrid() {
+      const grid = document.getElementById('effectsGrid');
+      grid.innerHTML = '';
+
+      const filteredEffects = Object.keys(effectsDatabase).filter(effectId => {
+        const effect = effectsDatabase[effectId];
+        const matchesCategory = currentCategory === 'all' || effect.category === currentCategory;
+        const matchesSearch = effect.name.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesCategory && matchesSearch;
+      });
+
+      filteredEffects.forEach(effectId => {
+        const effect = effectsDatabase[effectId];
+        const item = document.createElement('div');
+        item.classList.add('effect-item');
+        
+        if (currentFilterCss === effect.css) {
+          item.classList.add('selected');
+        }
+
+        item.innerHTML = `
+          <div class="effect-icon">${effect.icon}</div>
+          <div class="effect-name">${effect.name}</div>
+        `;
+
+        item.addEventListener('click', () => {
+          // Remover selección anterior
+          document.querySelectorAll('.effect-item').forEach(el => el.classList.remove('selected'));
+          document.querySelectorAll('.filter-btn').forEach(el => el.classList.remove('active'));
+          
+          // Aplicar nuevo efecto
+          item.classList.add('selected');
+          currentFilterCss = effect.css;
+          applyFilter();
+          
+          showNotification(`✨ Efecto "${effect.name}" aplicado`);
+          
+          // Cerrar modal después de un breve delay
+          setTimeout(() => {
+            closeEffectsSearch();
+          }, 500);
+        });
+
+        grid.appendChild(item);
+      });
+    }
+
+    // Event listeners para búsqueda
+    document.getElementById('searchEffectsBtn').addEventListener('click', openEffectsSearch);
+    document.getElementById('searchCloseBtn').addEventListener('click', closeEffectsSearch);
+
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      loadEffectsGrid();
+    });
+
+    document.querySelectorAll('.category-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCategory = btn.dataset.category;
+        loadEffectsGrid();
+      });
+    });
+
+    // Cerrar modal con ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('effectsSearchModal').classList.contains('active')) {
+        closeEffectsSearch();
+      }
+    });
 
     // Inicialización
     window.addEventListener('load', () => {
