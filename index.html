@@ -1222,10 +1222,36 @@
         loadFiltersFromFirebase(snapshot.val());
       });
 
+      // Escuchar cambios en efectos 3D
+      db.ref('efectos_3d').on('value', (snapshot) => {
+        loadEffects3DFromFirebase(snapshot.val());
+      });
+
       // Escuchar cambios en estadísticas de uso
       db.ref('efectos_uso').on('value', (snapshot) => {
         updateUsageCounters(snapshot.val());
       });
+    }
+
+    // Cargar efectos 3D desde Firebase
+    function loadEffects3DFromFirebase(data) {
+      if (data) {
+        Object.keys(data).forEach(effectId => {
+          const effect = data[effectId];
+          effectsDatabase['3d_' + effectId] = {
+            name: effect.nombre,
+            css: '',
+            category: '3d',
+            icon: effect.tipo.substring(0, 3).toUpperCase(),
+            effect3d: effectId
+          };
+        });
+        
+        // Actualizar grid si está abierto
+        if (document.getElementById('effectsSearchModal').classList.contains('active')) {
+          loadEffectsGrid();
+        }
+      }
     }
 
     // Cargar filtros desde Firebase
