@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +6,11 @@
   <title>Cámara Pro - Video & Photo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
     * {
       margin: 0; padding: 0; box-sizing: border-box;
@@ -30,6 +36,17 @@
       width: 100%; 
       height: 100%; 
       object-fit: cover;
+    }
+
+    /* Canvas para efectos 3D */
+    #effects3d {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
     }
 
     /* Header estilo Twitter */
@@ -466,6 +483,8 @@
       transform: scale(1.1);
     }
 
+    
+
     /* Modal de búsqueda de efectos */
     .effects-search-modal {
       position: fixed;
@@ -561,7 +580,7 @@
       flex: 1;
       padding: 20px;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
       gap: 15px;
       overflow-y: auto;
     }
@@ -583,6 +602,7 @@
       font-size: 12px;
       font-weight: 600;
       padding: 8px;
+      position: relative;
     }
 
     .effect-item:hover {
@@ -607,6 +627,19 @@
       overflow: hidden;
       white-space: nowrap;
       width: 100%;
+      margin-bottom: 3px;
+    }
+
+    .effect-usage {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: rgba(255, 0, 0, 0.8);
+      color: #fff;
+      font-size: 8px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: bold;
     }
 
     .filter-btn {
@@ -652,6 +685,21 @@
       transform: scale(1.1);
       box-shadow: 0 0 20px rgba(29, 155, 240, 0.6);
     }
+
+    .filter-usage {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: rgba(255, 0, 0, 0.9);
+      color: #fff;
+      font-size: 8px;
+      padding: 2px 5px;
+      border-radius: 8px;
+      font-weight: bold;
+      z-index: 3;
+    }
+
+    
 
     /* Notificaciones */
     .notification {
@@ -724,6 +772,8 @@
       animation: blink 1s infinite;
     }
 
+    
+
     /* Media queries para responsive */
     @media (max-width: 480px) {
       .header {
@@ -758,6 +808,7 @@
   <div class="camera-app">
     <video id="camera" autoplay playsinline muted></video>
     <canvas id="canvas" style="display: none;"></canvas>
+    <canvas id="effects3d"></canvas>
     <audio id="backgroundMusic" loop style="display: none;"></audio>
     <input type="file" id="musicFileInput" accept="audio/*" style="display: none;">
 
@@ -773,6 +824,8 @@
         <button id="timerToggle" class="header-btn"><i class="fas fa-clock"></i></button>
       </div>
     </div>
+
+    
 
     <!-- Controles de música -->
     <div class="music-controls">
@@ -854,12 +907,15 @@
         <button class="category-btn" data-category="color">Color</button>
         <button class="category-btn" data-category="fun">Divertidos</button>
         <button class="category-btn" data-category="dramatic">Dramáticos</button>
+        <button class="category-btn" data-category="3d">Efectos 3D</button>
       </div>
       
       <div class="effects-grid" id="effectsGrid">
         <!-- Efectos se cargan dinámicamente -->
       </div>
     </div>
+
+    
 
     <!-- Efecto flash -->
     <div class="flash-effect" id="flashEffect"></div>
@@ -898,12 +954,17 @@
     let recordingStartTime;
     let timerInterval;
     let currentMode = 'photo';
-    let maxRecordingTime = 60000; // 60 segundos
-    let countdownTime = 0; // Tiempo de cuenta regresiva
+    let maxRecordingTime = 60000;
+    let countdownTime = 0;
     let backgroundMusic = null;
     let musicPlaying = false;
     let currentMusicFile = null;
     let audioInitialized = false;
+    let current3DEffect = null;
+    let faceDetection = null;
+    let faceMesh = null;
+    let scene, camera3d, renderer;
+    let faceObjects = [];
 
     // Elementos DOM
     const camera = document.getElementById('camera');
@@ -920,11 +981,435 @@
     const musicFileInput = document.getElementById('musicFileInput');
     const musicInfo = document.getElementById('musicInfo');
     const musicTitle = document.getElementById('musicTitle');
+    const effects3dCanvas = document.getElementById('effects3d');
+
+    // Inicializar MediaPipe Face Mesh
+    function initializeFaceDetection() {
+      faceMesh = new FaceMesh({
+        locateFile: (file) => {
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+        }
+      });
+
+      faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+
+      faceMesh.onResults(onFaceDetectionResults);
+    }
+
+    // Inicializar Three.js para efectos 3D
+    function initializeThreeJS() {
+      scene = new THREE.Scene();
+      
+      camera3d = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera3d.position.z = 5;
+
+      renderer = new THREE.WebGLRenderer({ 
+        canvas: effects3dCanvas, 
+        alpha: true,
+        antialias: true 
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x000000, 0);
+
+      // Ajustar tamaño cuando cambie la ventana
+      window.addEventListener('resize', () => {
+        camera3d.aspect = window.innerWidth / window.innerHeight;
+        camera3d.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    }
+
+    // Resultados de detección facial
+    function onFaceDetectionResults(results) {
+      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+        const landmarks = results.multiFaceLandmarks[0];
+        
+        if (current3DEffect) {
+          update3DEffect(landmarks);
+        }
+      }
+      
+      // Renderizar la escena 3D
+      if (renderer && scene && camera3d) {
+        renderer.render(scene, camera3d);
+      }
+    }
+
+    // Actualizar efectos 3D basados en landmarks faciales
+    function update3DEffect(landmarks) {
+      // Limpiar objetos anteriores
+      faceObjects.forEach(obj => scene.remove(obj));
+      faceObjects = [];
+
+      if (current3DEffect === 'dogEars') {
+        addDogEars(landmarks);
+      } else if (current3DEffect === 'catEars') {
+        addCatEars(landmarks);
+      } else if (current3DEffect === 'bunnyEars') {
+        addBunnyEars(landmarks);
+      } else if (current3DEffect === 'heartEyes') {
+        addHeartEyes(landmarks);
+      }
+    }
+
+    // Crear orejas de perro
+    function addDogEars(landmarks) {
+      const earGeometry = new THREE.ConeGeometry(0.3, 0.8, 8);
+      const earMaterial = new THREE.MeshBasicMaterial({ color: 0x8B4513 });
+
+      // Oreja izquierda
+      const leftEar = new THREE.Mesh(earGeometry, earMaterial);
+      const leftEarPos = landmarks[234]; // Punto cerca de la oreja izquierda
+      leftEar.position.set(
+        (leftEarPos.x - 0.5) * 10,
+        -(leftEarPos.y - 0.5) * 10 + 1.5,
+        leftEarPos.z * 10
+      );
+      leftEar.rotation.z = Math.PI / 4;
+      scene.add(leftEar);
+      faceObjects.push(leftEar);
+
+      // Oreja derecha
+      const rightEar = new THREE.Mesh(earGeometry, earMaterial);
+      const rightEarPos = landmarks[454]; // Punto cerca de la oreja derecha
+      rightEar.position.set(
+        (rightEarPos.x - 0.5) * 10,
+        -(rightEarPos.y - 0.5) * 10 + 1.5,
+        rightEarPos.z * 10
+      );
+      rightEar.rotation.z = -Math.PI / 4;
+      scene.add(rightEar);
+      faceObjects.push(rightEar);
+    }
+
+    // Crear orejas de gato
+    function addCatEars(landmarks) {
+      const earGeometry = new THREE.ConeGeometry(0.25, 0.6, 3);
+      const earMaterial = new THREE.MeshBasicMaterial({ color: 0xFF69B4 });
+
+      // Orejas puntiagudas de gato
+      const leftEar = new THREE.Mesh(earGeometry, earMaterial);
+      const leftEarPos = landmarks[234];
+      leftEar.position.set(
+        (leftEarPos.x - 0.5) * 10,
+        -(leftEarPos.y - 0.5) * 10 + 1.3,
+        leftEarPos.z * 10
+      );
+      scene.add(leftEar);
+      faceObjects.push(leftEar);
+
+      const rightEar = new THREE.Mesh(earGeometry, earMaterial);
+      const rightEarPos = landmarks[454];
+      rightEar.position.set(
+        (rightEarPos.x - 0.5) * 10,
+        -(rightEarPos.y - 0.5) * 10 + 1.3,
+        rightEarPos.z * 10
+      );
+      scene.add(rightEar);
+      faceObjects.push(rightEar);
+    }
+
+    // Crear orejas de conejo
+    function addBunnyEars(landmarks) {
+      const earGeometry = new THREE.CylinderGeometry(0.15, 0.1, 1.2, 8);
+      const earMaterial = new THREE.MeshBasicMaterial({ color: 0xFFB6C1 });
+
+      const leftEar = new THREE.Mesh(earGeometry, earMaterial);
+      const leftEarPos = landmarks[234];
+      leftEar.position.set(
+        (leftEarPos.x - 0.5) * 10 - 0.5,
+        -(leftEarPos.y - 0.5) * 10 + 2,
+        leftEarPos.z * 10
+      );
+      leftEar.rotation.z = Math.PI / 6;
+      scene.add(leftEar);
+      faceObjects.push(leftEar);
+
+      const rightEar = new THREE.Mesh(earGeometry, earMaterial);
+      const rightEarPos = landmarks[454];
+      rightEar.position.set(
+        (rightEarPos.x - 0.5) * 10 + 0.5,
+        -(rightEarPos.y - 0.5) * 10 + 2,
+        rightEarPos.z * 10
+      );
+      rightEar.rotation.z = -Math.PI / 6;
+      scene.add(rightEar);
+      faceObjects.push(rightEar);
+    }
+
+    // Crear ojos de corazón
+    function addHeartEyes(landmarks) {
+      const heartShape = new THREE.Shape();
+      heartShape.moveTo(0, 0);
+      heartShape.bezierCurveTo(0, -0.3, -0.6, -0.3, -0.6, 0);
+      heartShape.bezierCurveTo(-0.6, 0.3, 0, 0.6, 0, 1);
+      heartShape.bezierCurveTo(0, 0.6, 0.6, 0.3, 0.6, 0);
+      heartShape.bezierCurveTo(0.6, -0.3, 0, -0.3, 0, 0);
+
+      const heartGeometry = new THREE.ShapeGeometry(heartShape);
+      const heartMaterial = new THREE.MeshBasicMaterial({ color: 0xFF1493 });
+
+      // Corazón en ojo izquierdo
+      const leftHeart = new THREE.Mesh(heartGeometry, heartMaterial);
+      const leftEyePos = landmarks[33];
+      leftHeart.position.set(
+        (leftEyePos.x - 0.5) * 10,
+        -(leftEyePos.y - 0.5) * 10,
+        leftEyePos.z * 10 + 0.1
+      );
+      leftHeart.scale.set(0.3, 0.3, 0.3);
+      scene.add(leftHeart);
+      faceObjects.push(leftHeart);
+
+      // Corazón en ojo derecho
+      const rightHeart = new THREE.Mesh(heartGeometry, heartMaterial);
+      const rightEyePos = landmarks[362];
+      rightHeart.position.set(
+        (rightEyePos.x - 0.5) * 10,
+        -(rightEyePos.y - 0.5) * 10,
+        rightEyePos.z * 10 + 0.1
+      );
+      rightHeart.scale.set(0.3, 0.3, 0.3);
+      scene.add(rightHeart);
+      faceObjects.push(rightHeart);
+    }
+
+    
+
+    function toggle3DEffect(effectName) {
+      if (current3DEffect === effectName) {
+        // Desactivar efecto actual
+        current3DEffect = null;
+        faceObjects.forEach(obj => scene.remove(obj));
+        faceObjects = [];
+        showNotification('Efecto 3D desactivado');
+      } else {
+        // Activar nuevo efecto
+        current3DEffect = effectName;
+        
+        // Incrementar contador de uso
+        incrementEffectUsage('3d_' + effectName);
+        
+        showNotification(`Efecto 3D: ${effectName} activado`);
+      }
+    }
+
+    // Procesar video para detección facial
+    async function processVideoFrame() {
+      if (camera.readyState === 4 && faceMesh) {
+        await faceMesh.send({ image: camera });
+      }
+      requestAnimationFrame(processVideoFrame);
+    }
+
+    // Sistema de estadísticas de uso en tiempo real
+    function incrementEffectUsage(effectId) {
+      const usageRef = db.ref('efectos_uso/' + effectId);
+      usageRef.transaction((currentValue) => {
+        return (currentValue || 0) + 1;
+      });
+    }
+
+    // Sincronización en tiempo real de efectos desde Firebase
+    function setupRealtimeSync() {
+      // Escuchar cambios en filtros
+      db.ref('filtros').on('value', (snapshot) => {
+        loadFiltersFromFirebase(snapshot.val());
+      });
+
+      // Escuchar cambios en estadísticas de uso
+      db.ref('efectos_uso').on('value', (snapshot) => {
+        updateUsageCounters(snapshot.val());
+      });
+    }
+
+    // Cargar filtros desde Firebase
+    function loadFiltersFromFirebase(data) {
+      const container = document.getElementById('filtersContainer');
+      container.innerHTML = '';
+
+      // Agregar filtro "Original" por defecto
+      const originalBtn = createFilterButton('none', {
+        nombre: 'Original',
+        css: 'none',
+        categoria: 'basic'
+      });
+      container.appendChild(originalBtn);
+
+      if (data) {
+        Object.keys(data).forEach(filterId => {
+          const btn = createFilterButton(filterId, data[filterId]);
+          container.appendChild(btn);
+        });
+      }
+    }
+
+    // Crear botón de filtro con contador de uso
+    function createFilterButton(filterId, filterData) {
+      const btn = document.createElement('button');
+      btn.classList.add('filter-btn');
+      btn.dataset.filterId = filterId;
+
+      if (filterData.imagen) {
+        btn.style.backgroundImage = `url(${filterData.imagen})`;
+      } else {
+        btn.style.backgroundColor = '#333';
+      }
+
+      btn.innerHTML = `
+        <span>${filterData.nombre}</span>
+        <div class="filter-usage" id="usage-${filterId}">0</div>
+      `;
+
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilterCss = filterData.css || 'none';
+        applyFilter();
+        
+        // Incrementar contador de uso
+        if (filterId !== 'none') {
+          incrementEffectUsage(filterId);
+        }
+        
+        showNotification(`Filtro "${filterData.nombre}" aplicado`);
+      });
+
+      return btn;
+    }
+
+    // Actualizar contadores de uso en tiempo real
+    function updateUsageCounters(usageData) {
+      if (!usageData) return;
+
+      Object.keys(usageData).forEach(effectId => {
+        const usageElement = document.getElementById(`usage-${effectId}`);
+        if (usageElement) {
+          usageElement.textContent = usageData[effectId];
+        }
+
+        // También actualizar en la búsqueda de efectos
+        const effectElement = document.querySelector(`[data-effect-id="${effectId}"] .effect-usage`);
+        if (effectElement) {
+          effectElement.textContent = usageData[effectId];
+        }
+      });
+    }
+
+    // Base de datos expandida de efectos sin emojis
+    const effectsDatabase = {
+      // Filtros básicos
+      'none': { name: 'Original', css: 'none', category: 'basic', icon: 'O' },
+      'sepia': { name: 'Sepia', css: 'sepia(100%)', category: 'vintage', icon: 'S' },
+      'grayscale': { name: 'B&N', css: 'grayscale(100%)', category: 'artistic', icon: 'G' },
+      'contrast': { name: 'Contraste', css: 'contrast(150%)', category: 'dramatic', icon: 'C' },
+      'brightness': { name: 'Brillo', css: 'brightness(150%)', category: 'color', icon: 'B' },
+      'blur': { name: 'Desenfoque', css: 'blur(5px)', category: 'artistic', icon: 'D' },
+      'vintage': { name: 'Vintage', css: 'sepia(80%) hue-rotate(-20deg)', category: 'vintage', icon: 'V' },
+      'warm': { name: 'Cálido', css: 'saturate(150%) hue-rotate(10deg)', category: 'color', icon: 'W' },
+      'cold': { name: 'Frío', css: 'saturate(140%) hue-rotate(-10deg)', category: 'color', icon: 'F' },
+      'dreamy': { name: 'Soñador', css: 'sepia(50%) hue-rotate(10deg) contrast(110%)', category: 'artistic', icon: 'DR' },
+      'retro': { name: 'Retro', css: 'grayscale(50%) contrast(120%)', category: 'vintage', icon: 'R' },
+      'cinema': { name: 'Cinema', css: 'contrast(130%) sepia(30%)', category: 'dramatic', icon: 'CI' },
+      'sunset': { name: 'Atardecer', css: 'sepia(70%) contrast(120%) hue-rotate(-10deg)', category: 'color', icon: 'SU' },
+      'dramatic': { name: 'Dramático', css: 'contrast(140%) saturate(150%)', category: 'dramatic', icon: 'DM' },
+      
+      // Efectos adicionales
+      'neon': { name: 'Neón', css: 'saturate(200%) contrast(150%) hue-rotate(90deg)', category: 'fun', icon: 'N' },
+      'cyberpunk': { name: 'Cyberpunk', css: 'saturate(180%) contrast(130%) hue-rotate(270deg)', category: 'fun', icon: 'CP' },
+      'pastel': { name: 'Pastel', css: 'saturate(80%) brightness(120%) contrast(90%)', category: 'artistic', icon: 'P' },
+      'noir': { name: 'Noir', css: 'grayscale(100%) contrast(150%) brightness(90%)', category: 'dramatic', icon: 'NO' },
+      'tropical': { name: 'Tropical', css: 'saturate(160%) hue-rotate(30deg) brightness(110%)', category: 'color', icon: 'T' },
+      'arctic': { name: 'Ártico', css: 'saturate(120%) hue-rotate(-30deg) brightness(120%)', category: 'color', icon: 'A' },
+      'golden': { name: 'Dorado', css: 'sepia(60%) saturate(140%) hue-rotate(20deg)', category: 'vintage', icon: 'GO' },
+      'forest': { name: 'Bosque', css: 'saturate(130%) hue-rotate(80deg) contrast(110%)', category: 'color', icon: 'FO' },
+      'ocean': { name: 'Océano', css: 'saturate(140%) hue-rotate(180deg) contrast(105%)', category: 'color', icon: 'OC' },
+      'fire': { name: 'Fuego', css: 'saturate(170%) hue-rotate(-20deg) contrast(120%)', category: 'dramatic', icon: 'FI' },
+      
+      // Efectos 3D
+      '3d_dogEars': { name: 'Orejas Perro', css: '', category: '3d', icon: 'DOG', effect3d: 'dogEars' },
+      '3d_catEars': { name: 'Orejas Gato', css: '', category: '3d', icon: 'CAT', effect3d: 'catEars' },
+      '3d_bunnyEars': { name: 'Orejas Conejo', css: '', category: '3d', icon: 'BUN', effect3d: 'bunnyEars' },
+      '3d_heartEyes': { name: 'Ojos Corazón', css: '', category: '3d', icon: 'HRT', effect3d: 'heartEyes' }
+    };
+
+    // Variables para búsqueda
+    let currentCategory = 'all';
+    let searchQuery = '';
+
+    // Cargar grid de efectos con contadores de uso
+    function loadEffectsGrid() {
+      const grid = document.getElementById('effectsGrid');
+      grid.innerHTML = '';
+
+      const filteredEffects = Object.keys(effectsDatabase).filter(effectId => {
+        const effect = effectsDatabase[effectId];
+        const matchesCategory = currentCategory === 'all' || effect.category === currentCategory;
+        const matchesSearch = effect.name.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesCategory && matchesSearch;
+      });
+
+      filteredEffects.forEach(effectId => {
+        const effect = effectsDatabase[effectId];
+        const item = document.createElement('div');
+        item.classList.add('effect-item');
+        item.dataset.effectId = effectId;
+        
+        if ((currentFilterCss === effect.css && effect.css) || 
+            (current3DEffect === effect.effect3d && effect.effect3d)) {
+          item.classList.add('selected');
+        }
+
+        item.innerHTML = `
+          <div class="effect-icon">${effect.icon}</div>
+          <div class="effect-name">${effect.name}</div>
+          <div class="effect-usage" id="usage-search-${effectId}">0</div>
+        `;
+
+        item.addEventListener('click', () => {
+          // Remover selección anterior
+          document.querySelectorAll('.effect-item').forEach(el => el.classList.remove('selected'));
+          document.querySelectorAll('.filter-btn').forEach(el => el.classList.remove('active'));
+          document.querySelectorAll('.effect-3d-btn').forEach(el => el.classList.remove('active'));
+          
+          // Aplicar nuevo efecto
+          item.classList.add('selected');
+          
+          if (effect.effect3d) {
+            // Efecto 3D
+            current3DEffect = effect.effect3d;
+          } else {
+            // Filtro CSS
+            current3DEffect = null;
+            currentFilterCss = effect.css;
+            applyFilter();
+          }
+          
+          // Incrementar contador de uso
+          incrementEffectUsage(effectId);
+          
+          showNotification(`✨ Efecto "${effect.name}" aplicado`);
+          
+          // Cerrar modal después de un breve delay
+          setTimeout(() => {
+            closeEffectsSearch();
+          }, 500);
+        });
+
+        grid.appendChild(item);
+      });
+    }
+
+    
 
     // Inicializar audio para móviles
     function initializeAudio() {
       if (!audioInitialized) {
-        // Crear un contexto de audio y reproducir silencio para activar audio en móviles
         const silentAudio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+P9kmUfAByP2O+tZB4AHmO50ry9jz4HFVO/4t+ZTwwOUqzc9ZRiEAABV+EYBAhRr+n5wXAHNjBWq9Hv5zoyBC2W3vfNfCQJJXvG9d2IOwcZYbfi06NQFAw=');
         silentAudio.play().catch(() => {});
         audioInitialized = true;
@@ -977,7 +1462,6 @@
     async function checkAutoFlash() {
       const flashBtn = document.getElementById('flash');
       
-      // Flash principalmente para cámara trasera
       if (facingMode === 'environment') {
         flashBtn.style.display = 'flex';
         if (currentStream) {
@@ -995,18 +1479,15 @@
           }
         }
       } else {
-        // Para cámara frontal, mostrar pero con funcionalidad limitada
         flashBtn.style.display = 'flex';
         flashBtn.style.opacity = '0.7';
         flashBtn.disabled = false;
-        // En cámara frontal usamos flash de pantalla
       }
     }
 
     // Inicializar cámara con mejor compatibilidad móvil
     async function initCamera() {
       try {
-        // Configuración adaptativa para móvil
         const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
         const constraints = {
@@ -1023,8 +1504,6 @@
           } : false
         };
 
-        console.log('Inicializando cámara con constraints:', constraints);
-
         if (currentStream) {
           currentStream.getTracks().forEach(track => track.stop());
         }
@@ -1032,22 +1511,16 @@
         currentStream = await navigator.mediaDevices.getUserMedia(constraints);
         camera.srcObject = currentStream;
 
-        console.log('Stream obtenido:', {
-          video: currentStream.getVideoTracks().length,
-          audio: currentStream.getAudioTracks().length,
-          mode: currentMode
-        });
-
-        // Configurar MediaRecorder para video
         if (currentMode === 'video') {
-          // Esperar un poco para que el stream se estabilice
           setTimeout(() => {
             setupMediaRecorder();
           }, 500);
         }
 
-        // Verificar auto-flash
         await checkAutoFlash();
+        
+        // Iniciar procesamiento de video para detección facial
+        processVideoFrame();
         
         showNotification(`📷 Cámara ${facingMode === 'environment' ? 'trasera' : 'frontal'} lista`);
 
@@ -1055,7 +1528,6 @@
         console.error('Error al acceder a la cámara:', err);
         showNotification('❌ Error al acceder a la cámara: ' + err.message);
         
-        // Intentar con configuración más básica
         try {
           const basicConstraints = {
             video: { facingMode: facingMode },
@@ -1078,16 +1550,10 @@
     function setupMediaRecorder() {
       if (currentStream && currentMode === 'video') {
         recordedChunks = [];
-
-        // Crear stream para grabación - Siempre incluir audio del micrófono
         let finalStream = currentStream;
 
-        console.log('Configurando MediaRecorder con audio:', currentStream.getAudioTracks().length > 0);
-
-        // Configurar MediaRecorder con máxima compatibilidad móvil
         let options = {};
         
-        // Probar diferentes formatos para móvil
         if (MediaRecorder.isTypeSupported('video/mp4')) {
           options.mimeType = 'video/mp4';
         } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
@@ -1098,33 +1564,26 @@
           options.mimeType = 'video/webm';
         }
 
-        // Agregar configuración de bitrate para móvil
-        options.videoBitsPerSecond = 2500000; // 2.5 Mbps
-        options.audioBitsPerSecond = 128000;  // 128 kbps
-
-        console.log('MediaRecorder options:', options);
+        options.videoBitsPerSecond = 2500000;
+        options.audioBitsPerSecond = 128000;
 
         try {
           mediaRecorder = new MediaRecorder(finalStream, options);
         } catch (error) {
-          console.log('Error con opciones específicas, usando configuración básica:', error);
           mediaRecorder = new MediaRecorder(finalStream);
         }
 
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
             recordedChunks.push(event.data);
-            console.log('Chunk grabado:', event.data.size, 'bytes');
           }
         };
 
         mediaRecorder.onstart = () => {
-          console.log('MediaRecorder iniciado');
           showNotification('📹 Grabación iniciada');
         };
 
         mediaRecorder.onstop = () => {
-          console.log('MediaRecorder detenido, chunks:', recordedChunks.length);
           if (recordedChunks.length > 0) {
             const mimeType = options.mimeType || 'video/webm';
             const blob = new Blob(recordedChunks, { type: mimeType });
@@ -1138,16 +1597,7 @@
         };
 
         mediaRecorder.onerror = (event) => {
-          console.error('Error en MediaRecorder:', event.error);
           showNotification('❌ Error al grabar: ' + event.error.name);
-        };
-
-        mediaRecorder.onpause = () => {
-          console.log('MediaRecorder pausado');
-        };
-
-        mediaRecorder.onresume = () => {
-          console.log('MediaRecorder reanudado');
         };
       }
     }
@@ -1161,7 +1611,6 @@
         btn.classList.add('active');
         currentMode = btn.dataset.mode;
 
-        // Mostrar/ocultar controles de música
         const musicControls = document.querySelector('.music-controls');
         if (currentMode === 'video') {
           musicControls.classList.add('video-mode');
@@ -1191,20 +1640,17 @@
         const track = currentStream.getVideoTracks()[0];
         
         if (facingMode === 'environment') {
-          // Cámara trasera - usar torch real
           try {
             await track.applyConstraints({ 
               advanced: [{ torch: flashEnabled }] 
             });
             showNotification(flashEnabled ? 'Flash activado' : 'Flash desactivado');
           } catch (err) {
-            console.error('Flash no soportado:', err);
             flashEnabled = false;
             document.getElementById('flash').classList.remove('active');
             showNotification('Flash no disponible en este dispositivo');
           }
         } else {
-          // Cámara frontal - usar flash de pantalla
           if (flashEnabled) {
             showNotification('Flash de pantalla activado');
           } else {
@@ -1222,10 +1668,10 @@
     });
 
     // Cronómetro toggle
-    const timerOptions = [0, 3, 5, 10]; // Opciones de tiempo
+    const timerOptions = [0, 3, 5, 10];
     let currentTimerIndex = 0;
 
-document.getElementById('timerToggle').addEventListener('click', () => {
+    document.getElementById('timerToggle').addEventListener('click', () => {
       currentTimerIndex = (currentTimerIndex + 1) % timerOptions.length;
       countdownTime = timerOptions[currentTimerIndex];
 
@@ -1250,7 +1696,6 @@ document.getElementById('timerToggle').addEventListener('click', () => {
       document.getElementById('musicFileInput').click();
     });
 
-    // Play/pause música
     document.getElementById('musicPlay').addEventListener('click', () => {
       if (backgroundMusic) {
         if (musicPlaying) {
@@ -1276,14 +1721,13 @@ document.getElementById('timerToggle').addEventListener('click', () => {
     musicFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file && file.type.startsWith('audio/')) {
-        initializeAudio(); // Inicializar audio para móviles
+        initializeAudio();
         
         currentMusicFile = file;
         const url = URL.createObjectURL(file);
         backgroundMusicElement.src = url;
         backgroundMusic = url;
 
-        // Configurar audio para móviles
         backgroundMusicElement.preload = 'auto';
         backgroundMusicElement.load();
 
@@ -1292,7 +1736,6 @@ document.getElementById('timerToggle').addEventListener('click', () => {
         document.getElementById('musicPlay').style.display = 'flex';
         musicUploadBtn.classList.add('active');
         
-        // Mostrar notificación de música
         musicInfo.classList.add('active');
         setTimeout(() => {
           musicInfo.classList.remove('active');
@@ -1338,12 +1781,11 @@ document.getElementById('timerToggle').addEventListener('click', () => {
     let longPressTimer = null;
     let isLongPress = false;
 
-    // Captura principal - Mobile first approach
+    // Captura principal
     captureButton.addEventListener('touchstart', handleTouchStart, { passive: false });
     captureButton.addEventListener('touchend', handleTouchEnd, { passive: false });
     captureButton.addEventListener('touchcancel', handleTouchEnd, { passive: false });
     
-    // Desktop fallback
     captureButton.addEventListener('mousedown', handleMouseStart);
     captureButton.addEventListener('mouseup', handleMouseEnd);
     captureButton.addEventListener('mouseleave', handleMouseEnd);
@@ -1356,19 +1798,17 @@ document.getElementById('timerToggle').addEventListener('click', () => {
       isLongPress = false;
 
       if (currentMode === 'photo') {
-        // Foto inmediata en modo foto
         startCountdown(() => {
           takePhoto();
         });
       } else {
-        // Modo video - iniciar grabación inmediatamente en móvil
         if (!isRecording) {
           longPressTimer = setTimeout(() => {
             isLongPress = true;
             startCountdown(() => {
               startRecording();
             });
-          }, 200); // Pequeño delay para evitar toques accidentales
+          }, 200);
         }
       }
     }
@@ -1386,10 +1826,8 @@ document.getElementById('timerToggle').addEventListener('click', () => {
 
       if (currentMode === 'video') {
         if (isRecording) {
-          // Detener grabación
           stopRecording();
         } else if (!isLongPress && touchDuration < 200) {
-          // Toque rápido en modo video - también iniciar grabación
           startCountdown(() => {
             startRecording();
           });
@@ -1431,15 +1869,19 @@ document.getElementById('timerToggle').addEventListener('click', () => {
       context.filter = window.getComputedStyle(camera).filter;
       context.drawImage(camera, 0, 0, canvas.width, canvas.height);
 
+      // Si hay efectos 3D, también capturar el canvas 3D
+      if (current3DEffect && renderer) {
+        const canvas3d = renderer.domElement;
+        context.drawImage(canvas3d, 0, 0, canvas.width, canvas.height);
+      }
+
       const image = canvas.toDataURL('image/jpeg', 0.95);
       downloadFile(dataURLtoBlob(image), 'foto_' + new Date().getTime() + '.jpg');
 
-      // Efectos
       playShutterSound();
       showFlashEffect();
       showNotification('Foto guardada');
 
-      // Animación del botón
       captureButton.style.transform = 'scale(0.9)';
       setTimeout(() => { captureButton.style.transform = 'scale(1)'; }, 150);
     }
@@ -1455,23 +1897,18 @@ document.getElementById('timerToggle').addEventListener('click', () => {
       recordingTimer.classList.add('active');
       recordingIndicator.classList.add('active');
 
-      // Inicializar y reproducir música para móviles
       if (backgroundMusic && backgroundMusicElement.src) {
-        initializeAudio(); // Asegurar que el audio esté inicializado
+        initializeAudio();
         
         backgroundMusicElement.currentTime = 0;
         backgroundMusicElement.volume = 0.7;
         backgroundMusicElement.muted = false;
         
-        // Método más robusto para móviles
         backgroundMusicElement.play().then(() => {
           musicPlaying = true;
           document.getElementById('musicPlay').innerHTML = '<i class="fas fa-pause"></i>';
           showNotification('🎵 Grabando con música');
-          console.log('Música iniciada correctamente');
         }).catch((err) => {
-          console.error('Error de reproducción:', err);
-          // Intentar nuevamente después de un breve delay
           setTimeout(() => {
             backgroundMusicElement.play().catch(() => {
               showNotification('⚠️ Grabando sin música');
@@ -1485,10 +1922,8 @@ document.getElementById('timerToggle').addEventListener('click', () => {
       mediaRecorder.start();
       playStartRecordingSound();
 
-      // Timer
       timerInterval = setInterval(updateTimer, 100);
 
-      // Auto-stop después del tiempo máximo
       setTimeout(() => {
         if (isRecording) stopRecording();
       }, maxRecordingTime);
@@ -1520,8 +1955,6 @@ document.getElementById('timerToggle').addEventListener('click', () => {
       const minutes = Math.floor(elapsed / 60000);
       timerText.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
-
-    
 
     // Efectos visuales
     function showFlashEffect() {
@@ -1563,90 +1996,6 @@ document.getElementById('timerToggle').addEventListener('click', () => {
       URL.revokeObjectURL(url);
     }
 
-    // Base de datos de efectos expandida
-    const effectsDatabase = {
-      // Filtros básicos
-      'none': { name: 'Original', css: 'none', category: 'basic', icon: '🎯' },
-      'sepia': { name: 'Sepia', css: 'sepia(100%)', category: 'vintage', icon: '📸' },
-      'grayscale': { name: 'B&N', css: 'grayscale(100%)', category: 'artistic', icon: '⚫' },
-      'contrast': { name: 'Contraste', css: 'contrast(150%)', category: 'dramatic', icon: '🔆' },
-      'brightness': { name: 'Brillo', css: 'brightness(150%)', category: 'color', icon: '☀️' },
-      'blur': { name: 'Desenfoque', css: 'blur(5px)', category: 'artistic', icon: '🌫️' },
-      'vintage': { name: 'Vintage', css: 'sepia(80%) hue-rotate(-20deg)', category: 'vintage', icon: '📻' },
-      'warm': { name: 'Cálido', css: 'saturate(150%) hue-rotate(10deg)', category: 'color', icon: '🔥' },
-      'cold': { name: 'Frío', css: 'saturate(140%) hue-rotate(-10deg)', category: 'color', icon: '❄️' },
-      'dreamy': { name: 'Soñador', css: 'sepia(50%) hue-rotate(10deg) contrast(110%)', category: 'artistic', icon: '✨' },
-      'retro': { name: 'Retro', css: 'grayscale(50%) contrast(120%)', category: 'vintage', icon: '🕺' },
-      'cinema': { name: 'Cinema', css: 'contrast(130%) sepia(30%)', category: 'dramatic', icon: '🎬' },
-      'sunset': { name: 'Atardecer', css: 'sepia(70%) contrast(120%) hue-rotate(-10deg)', category: 'color', icon: '🌅' },
-      'dramatic': { name: 'Dramático', css: 'contrast(140%) saturate(150%)', category: 'dramatic', icon: '🎭' },
-      
-      // Efectos adicionales
-      'neon': { name: 'Neón', css: 'saturate(200%) contrast(150%) hue-rotate(90deg)', category: 'fun', icon: '🌈' },
-      'cyberpunk': { name: 'Cyberpunk', css: 'saturate(180%) contrast(130%) hue-rotate(270deg)', category: 'fun', icon: '🤖' },
-      'pastel': { name: 'Pastel', css: 'saturate(80%) brightness(120%) contrast(90%)', category: 'artistic', icon: '🎨' },
-      'noir': { name: 'Noir', css: 'grayscale(100%) contrast(150%) brightness(90%)', category: 'dramatic', icon: '🕴️' },
-      'tropical': { name: 'Tropical', css: 'saturate(160%) hue-rotate(30deg) brightness(110%)', category: 'color', icon: '🌺' },
-      'arctic': { name: 'Ártico', css: 'saturate(120%) hue-rotate(-30deg) brightness(120%)', category: 'color', icon: '🐧' },
-      'golden': { name: 'Dorado', css: 'sepia(60%) saturate(140%) hue-rotate(20deg)', category: 'vintage', icon: '🏆' },
-      'forest': { name: 'Bosque', css: 'saturate(130%) hue-rotate(80deg) contrast(110%)', category: 'color', icon: '🌲' },
-      'ocean': { name: 'Océano', css: 'saturate(140%) hue-rotate(180deg) contrast(105%)', category: 'color', icon: '🌊' },
-      'fire': { name: 'Fuego', css: 'saturate(170%) hue-rotate(-20deg) contrast(120%)', category: 'dramatic', icon: '🔥' },
-      'ethereal': { name: 'Etéreo', css: 'saturate(110%) brightness(115%) blur(0.5px)', category: 'artistic', icon: '👻' },
-      'pop': { name: 'Pop Art', css: 'saturate(200%) contrast(140%) hue-rotate(45deg)', category: 'fun', icon: '💥' },
-      'monochrome': { name: 'Monocromo', css: 'grayscale(100%) contrast(120%)', category: 'artistic', icon: '⬛' },
-      'vibrant': { name: 'Vibrante', css: 'saturate(180%) contrast(125%)', category: 'fun', icon: '🎉' },
-      'muted': { name: 'Suave', css: 'saturate(70%) brightness(95%)', category: 'artistic', icon: '🤍' },
-      'high-key': { name: 'High Key', css: 'brightness(130%) contrast(90%)', category: 'artistic', icon: '💡' },
-      'low-key': { name: 'Low Key', css: 'brightness(70%) contrast(130%)', category: 'dramatic', icon: '🌑' },
-      'polaroid': { name: 'Polaroid', css: 'sepia(40%) saturate(130%) contrast(110%)', category: 'vintage', icon: '📷' },
-      'film': { name: 'Película', css: 'sepia(20%) saturate(120%) contrast(105%)', category: 'vintage', icon: '🎞️' },
-      'instagram': { name: 'Retro', css: 'sepia(25%) saturate(140%) hue-rotate(-5deg)', category: 'vintage', icon: '📱' }
-    };
-
-    // Variables para búsqueda
-    let currentCategory = 'all';
-    let searchQuery = '';
-
-    // Cargar filtros desde Firebase
-    function renderFilterButton(filterId, filterData) {
-      const btn = document.createElement('button');
-      btn.classList.add('filter-btn');
-
-      if (filterData.imagen) {
-        btn.style.backgroundImage = `url(${filterData.imagen})`;
-      } else {
-        btn.style.backgroundColor = '#333';
-      }
-
-      btn.innerHTML = `<span>${filterData.nombre}</span>`;
-
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentFilterCss = filterData.css || 'none';
-        applyFilter();
-      });
-
-      return btn;
-    }
-
-    function loadFilters() {
-      const filtersRef = db.ref('filtros');
-      filtersRef.on('value', (snapshot) => {
-        const data = snapshot.val();
-        const container = document.getElementById('filtersContainer');
-        container.innerHTML = '';
-
-        if (data) {
-          Object.keys(data).forEach(filterId => {
-            const btn = renderFilterButton(filterId, data[filterId]);
-            container.appendChild(btn);
-          });
-        }
-      });
-    }
-
     // Modal de búsqueda de efectos
     function openEffectsSearch() {
       document.getElementById('effectsSearchModal').classList.add('active');
@@ -1656,53 +2005,6 @@ document.getElementById('timerToggle').addEventListener('click', () => {
 
     function closeEffectsSearch() {
       document.getElementById('effectsSearchModal').classList.remove('active');
-    }
-
-    function loadEffectsGrid() {
-      const grid = document.getElementById('effectsGrid');
-      grid.innerHTML = '';
-
-      const filteredEffects = Object.keys(effectsDatabase).filter(effectId => {
-        const effect = effectsDatabase[effectId];
-        const matchesCategory = currentCategory === 'all' || effect.category === currentCategory;
-        const matchesSearch = effect.name.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
-      });
-
-      filteredEffects.forEach(effectId => {
-        const effect = effectsDatabase[effectId];
-        const item = document.createElement('div');
-        item.classList.add('effect-item');
-        
-        if (currentFilterCss === effect.css) {
-          item.classList.add('selected');
-        }
-
-        item.innerHTML = `
-          <div class="effect-icon">${effect.icon}</div>
-          <div class="effect-name">${effect.name}</div>
-        `;
-
-        item.addEventListener('click', () => {
-          // Remover selección anterior
-          document.querySelectorAll('.effect-item').forEach(el => el.classList.remove('selected'));
-          document.querySelectorAll('.filter-btn').forEach(el => el.classList.remove('active'));
-          
-          // Aplicar nuevo efecto
-          item.classList.add('selected');
-          currentFilterCss = effect.css;
-          applyFilter();
-          
-          showNotification(`✨ Efecto "${effect.name}" aplicado`);
-          
-          // Cerrar modal después de un breve delay
-          setTimeout(() => {
-            closeEffectsSearch();
-          }, 500);
-        });
-
-        grid.appendChild(item);
-      });
     }
 
     // Event listeners para búsqueda
@@ -1725,17 +2027,20 @@ document.getElementById('timerToggle').addEventListener('click', () => {
 
     // Cerrar modal con ESC
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && document.getElementById('effectsSearchModal').classList.contains('active')) {
-        closeEffectsSearch();
+      if (e.key === 'Escape') {
+        if (document.getElementById('effectsSearchModal').classList.contains('active')) {
+          closeEffectsSearch();
+        }
       }
     });
 
     // Inicialización
     window.addEventListener('load', () => {
+      initializeThreeJS();
+      initializeFaceDetection();
       initCamera();
-      loadFilters();
+      setupRealtimeSync();
       
-      // Inicializar audio en la primera interacción del usuario
       document.addEventListener('touchstart', initializeAudio, { once: true });
       document.addEventListener('click', initializeAudio, { once: true });
     });
