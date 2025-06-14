@@ -227,6 +227,12 @@
       51%, 100% { opacity: 0.3; }
     }
 
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
     @keyframes fadeInDown {
       from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
       to { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -961,6 +967,7 @@
     let currentMusicFile = null;
     let audioInitialized = false;
     let current3DEffect = null;
+    let currentEffectGeometry = null;
     let faceDetection = null;
     let faceMesh = null;
     let scene, camera3d, renderer;
@@ -1054,6 +1061,17 @@
         addBunnyEars(landmarks);
       } else if (current3DEffect === 'heartEyes') {
         addHeartEyes(landmarks);
+      } else if (current3DEffect === 'crown') {
+        addCrown(landmarks);
+      } else if (current3DEffect === 'glasses') {
+        addGlasses(landmarks);
+      } else if (current3DEffect === 'mustache') {
+        addMustache(landmarks);
+      } else if (current3DEffect === 'unicornHorn') {
+        addUnicornHorn(landmarks);
+      } else if (currentEffectGeometry) {
+        // Efecto personalizado desde Firebase
+        addCustomEffect(landmarks, currentEffectGeometry);
       }
     }
 
@@ -1179,9 +1197,232 @@
       faceObjects.push(rightHeart);
     }
 
+    // Crear corona
+    function addCrown(landmarks) {
+      const crownGeometry = new THREE.CylinderGeometry(0.8, 0.6, 0.3, 8);
+      const crownMaterial = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+
+      const crown = new THREE.Mesh(crownGeometry, crownMaterial);
+      const foreheadPos = landmarks[10]; // Centro de la frente
+      crown.position.set(
+        (foreheadPos.x - 0.5) * 10,
+        -(foreheadPos.y - 0.5) * 10 + 1.5,
+        foreheadPos.z * 10
+      );
+      scene.add(crown);
+      faceObjects.push(crown);
+
+      // Añadir puntas de la corona
+      for (let i = 0; i < 5; i++) {
+        const peakGeometry = new THREE.ConeGeometry(0.1, 0.4, 4);
+        const peak = new THREE.Mesh(peakGeometry, crownMaterial);
+        const angle = (i / 5) * Math.PI * 2;
+        peak.position.set(
+          crown.position.x + Math.cos(angle) * 0.7,
+          crown.position.y + 0.3,
+          crown.position.z + Math.sin(angle) * 0.7
+        );
+        scene.add(peak);
+        faceObjects.push(peak);
+      }
+    }
+
+    // Crear lentes
+    function addGlasses(landmarks) {
+      const glassGeometry = new THREE.RingGeometry(0.3, 0.35, 16);
+      const glassMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+      // Lente izquierdo
+      const leftGlass = new THREE.Mesh(glassGeometry, glassMaterial);
+      const leftEyePos = landmarks[33];
+      leftGlass.position.set(
+        (leftEyePos.x - 0.5) * 10,
+        -(leftEyePos.y - 0.5) * 10,
+        leftEyePos.z * 10 + 0.1
+      );
+      scene.add(leftGlass);
+      faceObjects.push(leftGlass);
+
+      // Lente derecho
+      const rightGlass = new THREE.Mesh(glassGeometry, glassMaterial);
+      const rightEyePos = landmarks[362];
+      rightGlass.position.set(
+        (rightEyePos.x - 0.5) * 10,
+        -(rightEyePos.y - 0.5) * 10,
+        rightEyePos.z * 10 + 0.1
+      );
+      scene.add(rightGlass);
+      faceObjects.push(rightGlass);
+
+      // Puente de los lentes
+      const bridgeGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.8, 8);
+      bridgeGeometry.rotateZ(Math.PI / 2);
+      const bridge = new THREE.Mesh(bridgeGeometry, glassMaterial);
+      bridge.position.set(
+        (leftEyePos.x + rightEyePos.x - 1) * 5,
+        -(leftEyePos.y + rightEyePos.y - 1) * 5,
+        (leftEyePos.z + rightEyePos.z) * 5 + 0.1
+      );
+      scene.add(bridge);
+      faceObjects.push(bridge);
+    }
+
+    // Crear bigote
+    function addMustache(landmarks) {
+      const mustacheGeometry = new THREE.SphereGeometry(0.4, 8, 4);
+      mustacheGeometry.scale(2, 0.5, 0.8);
+      const mustacheMaterial = new THREE.MeshBasicMaterial({ color: 0x8B4513 });
+
+      const mustache = new THREE.Mesh(mustacheGeometry, mustacheMaterial);
+      const nosePos = landmarks[2]; // Punta de la nariz
+      mustache.position.set(
+        (nosePos.x - 0.5) * 10,
+        -(nosePos.y - 0.5) * 10 - 0.3,
+        nosePos.z * 10 + 0.1
+      );
+      scene.add(mustache);
+      faceObjects.push(mustache);
+    }
+
+    // Crear cuerno de unicornio
+    function addUnicornHorn(landmarks) {
+      const hornGeometry = new THREE.ConeGeometry(0.2, 1.5, 8);
+      const hornMaterial = new THREE.MeshBasicMaterial({ color: 0xFFB6C1 });
+
+      const horn = new THREE.Mesh(hornGeometry, hornMaterial);
+      const foreheadPos = landmarks[10];
+      horn.position.set(
+        (foreheadPos.x - 0.5) * 10,
+        -(foreheadPos.y - 0.5) * 10 + 1.2,
+        foreheadPos.z * 10
+      );
+      scene.add(horn);
+      faceObjects.push(horn);
+
+      // Añadir espiral dorada
+      const spiralGeometry = new THREE.TorusGeometry(0.15, 0.02, 8, 16);
+      for (let i = 0; i < 3; i++) {
+        const spiral = new THREE.Mesh(spiralGeometry, new THREE.MeshBasicMaterial({ color: 0xFFD700 }));
+        spiral.position.copy(horn.position);
+        spiral.position.y += (i - 1) * 0.3;
+        spiral.scale.set(1 - i * 0.2, 1 - i * 0.2, 1 - i * 0.2);
+        scene.add(spiral);
+        faceObjects.push(spiral);
+      }
+    }
+
+    // Crear efecto personalizado desde Firebase
+    function addCustomEffect(landmarks, geometria) {
+      try {
+        if (!geometria) return;
+
+        let geometry, material;
+
+        // Crear geometría basada en el tipo
+        switch (geometria.type) {
+          case 'cone':
+            geometry = new THREE.ConeGeometry(
+              geometria.radius || 0.3,
+              geometria.height || 0.8,
+              geometria.segments || 8
+            );
+            break;
+          case 'sphere':
+            geometry = new THREE.SphereGeometry(
+              geometria.radius || 0.3,
+              geometria.widthSegments || 8,
+              geometria.heightSegments || 6
+            );
+            break;
+          case 'cylinder':
+            geometry = new THREE.CylinderGeometry(
+              geometria.radiusTop || 0.3,
+              geometria.radiusBottom || 0.3,
+              geometria.height || 0.8,
+              geometria.segments || 8
+            );
+            break;
+          case 'box':
+            geometry = new THREE.BoxGeometry(
+              geometria.width || 0.5,
+              geometria.height || 0.5,
+              geometria.depth || 0.5
+            );
+            break;
+          default:
+            geometry = new THREE.ConeGeometry(0.3, 0.8, 8);
+        }
+
+        // Crear material
+        material = new THREE.MeshBasicMaterial({ 
+          color: geometria.color || 0x8B4513,
+          transparent: geometria.transparent || false,
+          opacity: geometria.opacity || 1
+        });
+
+        // Posicionar según el tipo de efecto
+        const positions = getEffectPositions(landmarks, geometria.targetPoints || ['left_ear', 'right_ear']);
+        
+        positions.forEach((pos, index) => {
+          const mesh = new THREE.Mesh(geometry.clone(), material.clone());
+          mesh.position.set(pos.x, pos.y, pos.z);
+          
+          if (geometria.rotation) {
+            mesh.rotation.set(
+              geometria.rotation.x || 0,
+              geometria.rotation.y || 0,
+              geometria.rotation.z || 0
+            );
+          }
+          
+          if (geometria.scale) {
+            mesh.scale.set(
+              geometria.scale.x || 1,
+              geometria.scale.y || 1,
+              geometria.scale.z || 1
+            );
+          }
+
+          scene.add(mesh);
+          faceObjects.push(mesh);
+        });
+
+      } catch (error) {
+        console.warn('Error creando efecto personalizado:', error);
+      }
+    }
+
+    // Obtener posiciones para efectos basados en landmarks
+    function getEffectPositions(landmarks, targetPoints) {
+      const positions = [];
+      const landmarkMap = {
+        'left_ear': 234,
+        'right_ear': 454,
+        'left_eye': 33,
+        'right_eye': 362,
+        'nose': 2,
+        'forehead': 10,
+        'mouth': 13
+      };
+
+      targetPoints.forEach(point => {
+        const landmarkIndex = landmarkMap[point];
+        if (landmarkIndex && landmarks[landmarkIndex]) {
+          const landmark = landmarks[landmarkIndex];
+          positions.push({
+            x: (landmark.x - 0.5) * 10,
+            y: -(landmark.y - 0.5) * 10,
+            z: landmark.z * 10
+          });
+        }
+      });
+
+      return positions;
+    }
+
     
 
-    function toggle3DEffect(effectName) {
+    function toggle3DEffect(effectName, geometria = null) {
       if (current3DEffect === effectName) {
         // Desactivar efecto actual
         current3DEffect = null;
@@ -1191,6 +1432,7 @@
       } else {
         // Activar nuevo efecto
         current3DEffect = effectName;
+        currentEffectGeometry = geometria;
         
         // Incrementar contador de uso
         incrementEffectUsage('3d_' + effectName);
@@ -1242,8 +1484,9 @@
             name: effect.nombre,
             css: '',
             category: '3d',
-            icon: effect.tipo.substring(0, 3).toUpperCase(),
-            effect3d: effectId
+            icon: getEffectIcon(effect.tipo),
+            effect3d: effectId,
+            geometria: effect.geometria
           };
         });
         
@@ -1251,7 +1494,68 @@
         if (document.getElementById('effectsSearchModal').classList.contains('active')) {
           loadEffectsGrid();
         }
+        
+        // Actualizar panel de filtros
+        updateFiltersPanel();
       }
+    }
+
+    // Obtener icono para el tipo de efecto
+    function getEffectIcon(tipo) {
+      const iconMap = {
+        'ears': 'EAR',
+        'eyes': 'EYE',
+        'nose': 'NOS',
+        'mouth': 'MOU',
+        'accessories': 'ACC'
+      };
+      return iconMap[tipo] || tipo.substring(0, 3).toUpperCase();
+    }
+
+    // Actualizar panel de filtros para incluir efectos 3D
+    function updateFiltersPanel() {
+      const container = document.getElementById('filtersContainer');
+      
+      // Agregar efectos 3D al panel principal
+      Object.keys(effectsDatabase).forEach(effectId => {
+        const effect = effectsDatabase[effectId];
+        
+        if (effect.category === '3d') {
+          // Verificar si ya existe el botón
+          if (!document.querySelector(`[data-effect-id="${effectId}"]`)) {
+            const btn = create3DEffectButton(effectId, effect);
+            container.appendChild(btn);
+          }
+        }
+      });
+    }
+
+    // Crear botón de efecto 3D
+    function create3DEffectButton(effectId, effectData) {
+      const btn = document.createElement('button');
+      btn.classList.add('filter-btn', 'effect-3d-btn');
+      btn.dataset.effectId = effectId;
+      btn.style.background = 'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1)';
+      btn.style.backgroundSize = '200% 200%';
+      btn.style.animation = 'gradientShift 3s ease infinite';
+
+      btn.innerHTML = `
+        <span style="font-weight: bold; text-shadow: 0 0 10px rgba(255,255,255,0.8);">${effectData.name}</span>
+        <div class="filter-usage" id="usage-${effectId}">0</div>
+      `;
+
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        if (effectData.effect3d) {
+          toggle3DEffect(effectData.effect3d, effectData.geometria);
+        }
+        
+        showNotification(`✨ Efecto 3D "${effectData.name}" aplicado`);
+      });
+
+      return btn;
     }
 
     // Cargar filtros desde Firebase
@@ -1331,18 +1635,41 @@
     const effectsDatabase = {
       // Filtros básicos
       'none': { name: 'Original', css: 'none', category: 'basic', icon: 'O' },
+      'sepia': { name: 'Sepia', css: 'sepia(100%)', category: 'vintage', icon: 'S' },
+      'grayscale': { name: 'B&N', css: 'grayscale(100%)', category: 'artistic', icon: 'G' },
+      'contrast': { name: 'Contraste', css: 'contrast(150%)', category: 'dramatic', icon: 'C' },
+      'brightness': { name: 'Brillo', css: 'brightness(150%)', category: 'color', icon: 'B' },
+      'blur': { name: 'Desenfoque', css: 'blur(5px)', category: 'artistic', icon: 'D' },
+      'vintage': { name: 'Vintage', css: 'sepia(80%) hue-rotate(-20deg)', category: 'vintage', icon: 'V' },
+      'warm': { name: 'Cálido', css: 'saturate(150%) hue-rotate(10deg)', category: 'color', icon: 'W' },
+      'cold': { name: 'Frío', css: 'saturate(140%) hue-rotate(-10deg)', category: 'color', icon: 'F' },
+      'dreamy': { name: 'Soñador', css: 'sepia(50%) hue-rotate(10deg) contrast(110%)', category: 'artistic', icon: 'DR' },
+      'retro': { name: 'Retro', css: 'grayscale(50%) contrast(120%)', category: 'vintage', icon: 'R' },
+      'cinema': { name: 'Cinema', css: 'contrast(130%) sepia(30%)', category: 'dramatic', icon: 'CI' },
+      'sunset': { name: 'Atardecer', css: 'sepia(70%) contrast(120%) hue-rotate(-10deg)', category: 'color', icon: 'SU' },
       'dramatic': { name: 'Dramático', css: 'contrast(140%) saturate(150%)', category: 'dramatic', icon: 'DM' },
       
       // Efectos adicionales
       'neon': { name: 'Neón', css: 'saturate(200%) contrast(150%) hue-rotate(90deg)', category: 'fun', icon: 'N' },
- 
+      'cyberpunk': { name: 'Cyberpunk', css: 'saturate(180%) contrast(130%) hue-rotate(270deg)', category: 'fun', icon: 'CP' },
+      'pastel': { name: 'Pastel', css: 'saturate(80%) brightness(120%) contrast(90%)', category: 'artistic', icon: 'P' },
+      'noir': { name: 'Noir', css: 'grayscale(100%) contrast(150%) brightness(90%)', category: 'dramatic', icon: 'NO' },
+      'tropical': { name: 'Tropical', css: 'saturate(160%) hue-rotate(30deg) brightness(110%)', category: 'color', icon: 'T' },
+      'arctic': { name: 'Ártico', css: 'saturate(120%) hue-rotate(-30deg) brightness(120%)', category: 'color', icon: 'A' },
+      'golden': { name: 'Dorado', css: 'sepia(60%) saturate(140%) hue-rotate(20deg)', category: 'vintage', icon: 'GO' },
+      'forest': { name: 'Bosque', css: 'saturate(130%) hue-rotate(80deg) contrast(110%)', category: 'color', icon: 'FO' },
+      'ocean': { name: 'Océano', css: 'saturate(140%) hue-rotate(180deg) contrast(105%)', category: 'color', icon: 'OC' },
       'fire': { name: 'Fuego', css: 'saturate(170%) hue-rotate(-20deg) contrast(120%)', category: 'dramatic', icon: 'FI' },
       
       // Efectos 3D
       '3d_dogEars': { name: 'Orejas Perro', css: '', category: '3d', icon: 'DOG', effect3d: 'dogEars' },
       '3d_catEars': { name: 'Orejas Gato', css: '', category: '3d', icon: 'CAT', effect3d: 'catEars' },
       '3d_bunnyEars': { name: 'Orejas Conejo', css: '', category: '3d', icon: 'BUN', effect3d: 'bunnyEars' },
-      '3d_heartEyes': { name: 'Ojos Corazón', css: '', category: '3d', icon: 'HRT', effect3d: 'heartEyes' }
+      '3d_heartEyes': { name: 'Ojos Corazón', css: '', category: '3d', icon: 'HRT', effect3d: 'heartEyes' },
+      '3d_crown': { name: 'Corona Real', css: '', category: '3d', icon: 'CRW', effect3d: 'crown' },
+      '3d_glasses': { name: 'Lentes', css: '', category: '3d', icon: 'GLS', effect3d: 'glasses' },
+      '3d_mustache': { name: 'Bigote', css: '', category: '3d', icon: 'MST', effect3d: 'mustache' },
+      '3d_unicornHorn': { name: 'Cuerno Unicornio', css: '', category: '3d', icon: 'UNI', effect3d: 'unicornHorn' }
     };
 
     // Variables para búsqueda
@@ -2047,6 +2374,12 @@
       initializeFaceDetection();
       initCamera();
       setupRealtimeSync();
+      
+      // Cargar efectos 3D predeterminados
+      setTimeout(() => {
+        updateFiltersPanel();
+        loadEffectsGrid();
+      }, 1000);
       
       document.addEventListener('touchstart', initializeAudio, { once: true });
       document.addEventListener('click', initializeAudio, { once: true });
