@@ -6,6 +6,7 @@
   <title>Zenvio - Cámara Profesional</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
@@ -13,31 +14,34 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
     * {
-      margin: 0; padding: 0; box-sizing: border-box;
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box;
     }
 
     body {
       height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #000000;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       overflow: hidden;
       position: relative;
+      color: #ffffff;
     }
 
-    /* Página de inicio */
+    /* Página de inicio - Estilo Uber */
     .welcome-screen {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 2000;
-      transition: opacity 0.5s ease, transform 0.5s ease;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .welcome-screen.hidden {
@@ -47,59 +51,81 @@
     }
 
     .app-logo {
-      font-size: 4rem;
+      font-size: 4.5rem;
       font-weight: 900;
-      color: #fff;
-      text-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      margin-bottom: 2rem;
-      letter-spacing: -2px;
+      color: #ffffff;
+      text-shadow: 0 4px 40px rgba(0, 212, 0, 0.3);
+      margin-bottom: 1rem;
+      letter-spacing: -3px;
+      font-family: 'Inter', sans-serif;
+      position: relative;
+    }
+
+    .app-logo::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(90deg, #00D400 0%, #00B400 100%);
+      border-radius: 2px;
     }
 
     .app-subtitle {
-      font-size: 1.2rem;
-      color: rgba(255,255,255,0.9);
-      margin-bottom: 3rem;
+      font-size: 1.1rem;
+      color: #b3b3b3;
+      margin-bottom: 4rem;
       text-align: center;
       max-width: 400px;
       line-height: 1.6;
+      font-weight: 400;
+      letter-spacing: -0.3px;
     }
 
     .new-project-btn {
-      background: rgba(255,255,255,0.2);
-      border: 2px solid rgba(255,255,255,0.3);
-      color: #fff;
-      padding: 20px 40px;
-      border-radius: 50px;
-      font-size: 1.2rem;
+      background: #00D400;
+      border: none;
+      color: #000000;
+      padding: 18px 48px;
+      border-radius: 12px;
+      font-size: 1.1rem;
       font-weight: 700;
       cursor: pointer;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(20px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 12px;
+      box-shadow: 0 4px 20px rgba(0, 212, 0, 0.3);
+      letter-spacing: -0.3px;
+      font-family: 'Inter', sans-serif;
     }
 
     .new-project-btn:hover {
-      background: rgba(255,255,255,0.3);
-      border-color: rgba(255,255,255,0.5);
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      background: #00B400;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 212, 0, 0.4);
+    }
+
+    .new-project-btn:active {
+      transform: translateY(0);
     }
 
     .new-project-btn i {
-      font-size: 1.5rem;
+      font-size: 1.2rem;
+      font-weight: 900;
     }
 
-    /* Aplicación de cámara */
+    /* Aplicación de cámara - Estilo Uber */
     .camera-app {
       position: fixed; 
       width: 100%; 
       height: 100%; 
       overflow: hidden;
-      background: #000;
+      background: #000000;
       opacity: 0;
-      transition: opacity 0.5s ease;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .camera-app.active {
@@ -123,54 +149,55 @@
       z-index: 10;
     }
 
-    /* Header estilo moderno */
+    /* Header estilo Uber */
     .header {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
-      height: 60px;
-      background: rgba(0, 0, 0, 0.8);
+      height: 64px;
+      background: rgba(0, 0, 0, 0.95);
       backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 20px;
+      padding: 0 24px;
       z-index: 100;
     }
 
     .header-left, .header-right {
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: 16px;
     }
 
     .header-title {
-      color: #fff;
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      font-family: 'Inter', sans-serif;
     }
 
     .header-btn {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.08);
       border: none;
-      color: #fff;
-      width: 40px;
-      height: 40px;
-      border-radius: 20px;
+      color: #ffffff;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 16px;
-      transition: all 0.2s ease;
-      backdrop-filter: blur(10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
+      font-weight: 600;
     }
 
     .header-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.12);
       transform: scale(1.05);
     }
 
@@ -179,156 +206,161 @@
     }
 
     .header-btn.active {
-      background: #667eea;
-      box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+      background: #00D400;
+      color: #000000;
+      box-shadow: 0 4px 20px rgba(0, 212, 0, 0.3);
     }
 
     .back-btn {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.08);
       border: none;
-      color: #fff;
-      width: 40px;
-      height: 40px;
-      border-radius: 20px;
+      color: #ffffff;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 16px;
-      transition: all 0.2s ease;
-      backdrop-filter: blur(10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
+      font-weight: 600;
     }
 
     .back-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.12);
     }
 
-    /* Controles principales */
+    /* Controles principales - Estilo Uber */
     .controls-main {
       position: fixed;
-      bottom: 40px;
+      bottom: 48px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
       align-items: center;
-      gap: 30px;
+      gap: 32px;
       z-index: 100;
     }
 
     .mode-selector {
       display: flex;
-      background: rgba(0, 0, 0, 0.8);
-      border-radius: 25px;
-      padding: 8px;
+      background: rgba(0, 0, 0, 0.9);
+      border-radius: 16px;
+      padding: 4px;
       backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .mode-btn {
       background: transparent;
       border: none;
-      color: rgba(255, 255, 255, 0.7);
-      padding: 10px 20px;
-      border-radius: 20px;
+      color: #b3b3b3;
+      padding: 12px 24px;
+      border-radius: 12px;
       font-size: 14px;
-      font-weight: 600;
-      transition: all 0.3s ease;
+      font-weight: 700;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
+      letter-spacing: -0.3px;
+      font-family: 'Inter', sans-serif;
     }
 
     .mode-btn.active {
-      background: #667eea;
-      color: #fff;
+      background: #00D400;
+      color: #000000;
       transform: scale(1.02);
     }
 
-    /* Botón de captura principal - ARREGLADO */
+    /* Botón de captura principal - Estilo Uber */
     #captureButton {
-      width: 80px;
-      height: 80px;
+      width: 84px;
+      height: 84px;
       border-radius: 50%;
-      border: 4px solid #fff;
+      border: 3px solid #ffffff;
       background: transparent;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       cursor: pointer;
-      overflow: hidden; /* Evita que elementos se salgan */
+      overflow: hidden;
     }
 
     .capture-inner {
-      width: 60px;
-      height: 60px;
-      background: #fff;
+      width: 64px;
+      height: 64px;
+      background: #ffffff;
       border-radius: 50%;
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       z-index: 2;
     }
 
-    /* Estados del botón de captura - ARREGLADO */
+    /* Estados del botón de captura - Estilo Uber */
     #captureButton.recording {
-      border-color: #ff0040;
-      animation: pulse 1.5s infinite;
+      border-color: #ff3040;
+      animation: uberPulse 1.5s infinite;
     }
 
     #captureButton.recording .capture-inner {
-      background: #ff0040;
+      background: #ff3040;
       border-radius: 8px;
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
     }
 
-    /* Indicador de grabación arreglado */
+    /* Indicador de grabación estilo Uber */
     .recording-indicator {
       position: absolute;
-      top: -4px;
-      left: -4px;
-      right: -4px;
-      bottom: -4px;
-      border: 3px solid #ff0040;
+      top: -3px;
+      left: -3px;
+      right: -3px;
+      bottom: -3px;
+      border: 3px solid #ff3040;
       border-radius: 50%;
       opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       z-index: 1;
     }
 
     .recording-indicator.active {
       opacity: 1;
-      animation: simplePulse 1.5s infinite;
+      animation: uberRecordingPulse 1.5s infinite;
     }
 
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(255, 0, 64, 0.7); }
-      70% { box-shadow: 0 0 0 10px rgba(255, 0, 64, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(255, 0, 64, 0); }
+    @keyframes uberPulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 48, 64, 0.7); }
+      70% { box-shadow: 0 0 0 12px rgba(255, 48, 64, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 48, 64, 0); }
     }
 
-    @keyframes simplePulse {
+    @keyframes uberRecordingPulse {
       0%, 100% { opacity: 0.7; transform: scale(1); }
       50% { opacity: 1; transform: scale(1.05); }
     }
 
-    /* Timer de grabación */
+    /* Timer de grabación - Estilo Uber */
     .recording-timer {
       position: fixed;
-      top: 80px;
+      top: 84px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(255, 0, 64, 0.9);
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: 25px;
+      background: rgba(255, 48, 64, 0.95);
+      color: #ffffff;
+      padding: 12px 24px;
+      border-radius: 16px;
       font-size: 16px;
       font-weight: 700;
       display: none;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       backdrop-filter: blur(20px);
       z-index: 100;
-      animation: fadeInDown 0.3s ease;
+      animation: uberFadeInDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: 'Inter', sans-serif;
+      letter-spacing: -0.3px;
     }
 
     .recording-timer.active {
@@ -338,41 +370,41 @@
     .timer-dot {
       width: 8px;
       height: 8px;
-      background: #fff;
+      background: #ffffff;
       border-radius: 50%;
-      animation: blink 1s infinite;
+      animation: uberBlink 1s infinite;
     }
 
-    @keyframes blink {
+    @keyframes uberBlink {
       0%, 50% { opacity: 1; }
       51%, 100% { opacity: 0.3; }
     }
 
-    @keyframes fadeInDown {
+    @keyframes uberFadeInDown {
       from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
       to { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
 
-    @keyframes fadeInUp {
+    @keyframes uberFadeInUp {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Cronómetro cuenta regresiva */
+    /* Cronómetro cuenta regresiva - Estilo Uber */
     .countdown-overlay {
       position: fixed;
-      top: 100px;
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.9);
-      border-radius: 20px;
-      padding: 20px 30px;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.95);
+      border-radius: 24px;
+      padding: 32px 40px;
       display: none;
       align-items: center;
       justify-content: center;
       z-index: 500;
       backdrop-filter: blur(20px);
-      border: 2px solid rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.1);
     }
 
     .countdown-overlay.active {
@@ -380,27 +412,28 @@
     }
 
     .countdown-number {
-      font-size: 48px;
+      font-size: 56px;
       font-weight: 900;
-      color: #fff;
-      text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
-      animation: countdownPulse 1s ease infinite;
+      color: #ffffff;
+      text-shadow: 0 0 30px rgba(0, 212, 0, 0.6);
+      animation: uberCountdownPulse 1s ease infinite;
+      font-family: 'Inter', sans-serif;
     }
 
-    @keyframes countdownPulse {
+    @keyframes uberCountdownPulse {
       0% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.2); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 0.9; }
       100% { transform: scale(1); opacity: 1; }
     }
 
-    /* Controles de música - solo en video */
+    /* Controles de música - Estilo Uber */
     .music-controls {
       position: fixed;
       top: 200px;
-      right: 20px;
+      right: 24px;
       display: none;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
       z-index: 100;
     }
 
@@ -409,50 +442,52 @@
     }
 
     .music-btn {
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.9);
       border: none;
-      color: #fff;
-      width: 50px;
-      height: 50px;
-      border-radius: 25px;
+      color: #ffffff;
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 18px;
-      transition: all 0.2s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       cursor: pointer;
+      font-weight: 600;
     }
 
     .music-btn:hover {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
       transform: scale(1.05);
     }
 
     .music-btn.active {
-      background: #667eea;
-      box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+      background: #00D400;
+      color: #000000;
+      box-shadow: 0 4px 20px rgba(0, 212, 0, 0.3);
     }
 
     .music-info {
       position: fixed;
-      top: 80px;
-      left: 20px;
-      right: 20px;
-      background: rgba(102, 126, 234, 0.95);
-      color: #fff;
-      padding: 12px 20px;
-      border-radius: 25px;
+      top: 84px;
+      left: 24px;
+      right: 24px;
+      background: rgba(0, 212, 0, 0.95);
+      color: #000000;
+      padding: 16px 24px;
+      border-radius: 16px;
       backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
       display: none;
       align-items: center;
-      gap: 15px;
+      gap: 16px;
       z-index: 150;
       transform: translateY(-100%);
-      transition: transform 0.3s ease;
-      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 8px 32px rgba(0, 212, 0, 0.3);
+      font-family: 'Inter', sans-serif;
     }
 
     .music-info.active {
@@ -462,9 +497,9 @@
 
     .music-waveform {
       flex: 1;
-      height: 20px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 10px;
+      height: 24px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
       position: relative;
       overflow: hidden;
     }
@@ -476,11 +511,11 @@
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
-      animation: waveAnimation 2s linear infinite;
+      background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.4), transparent);
+      animation: uberWaveAnimation 2s linear infinite;
     }
 
-    @keyframes waveAnimation {
+    @keyframes uberWaveAnimation {
       0% { left: -100%; }
       100% { left: 100%; }
     }
@@ -492,14 +527,15 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      letter-spacing: -0.3px;
     }
 
     .music-title::before {
       content: '🎵 ';
-      margin-right: 5px;
+      margin-right: 8px;
     }
 
-    /* Cuadrícula */
+    /* Cuadrícula - Estilo Uber */
     .grid-overlay {
       position: fixed;
       top: 0;
@@ -509,7 +545,7 @@
       opacity: 0;
       pointer-events: none;
       z-index: 50;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .grid-overlay.active {
@@ -522,18 +558,18 @@
     }
 
     .grid-line {
-      stroke: rgba(255, 255, 255, 0.5);
+      stroke: rgba(255, 255, 255, 0.4);
       stroke-width: 1;
-      stroke-dasharray: 5, 5;
+      stroke-dasharray: 8, 8;
     }
 
-    /* Panel de filtros */
+    /* Panel de filtros - Estilo Uber */
     .filters-panel {
       position: fixed;
-      bottom: 140px;
+      bottom: 150px;
       left: 0;
       right: 0;
-      height: 90px;
+      height: 96px;
       overflow-x: auto;
       white-space: nowrap;
       scrollbar-width: none;
@@ -542,7 +578,7 @@
       align-items: center;
       justify-content: flex-start;
       background: transparent;
-      padding: 10px 0;
+      padding: 12px 0;
       z-index: 50;
     }
 
@@ -552,43 +588,45 @@
 
     .filters-container {
       display: flex;
-      gap: 15px;
-      padding: 0 20px;
+      gap: 16px;
+      padding: 0 24px;
     }
 
-    /* Botón de búsqueda de efectos */
+    /* Botón de búsqueda de efectos - Estilo Uber */
     .search-effects-btn {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      border: 2px dashed rgba(255, 255, 255, 0.8);
-      background: rgba(0, 0, 0, 0.7);
-      color: #fff;
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      border: 2px dashed rgba(255, 255, 255, 0.3);
+      background: rgba(0, 0, 0, 0.8);
+      color: #ffffff;
       font-size: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      backdrop-filter: blur(10px);
-      transition: all 0.3s ease;
+      backdrop-filter: blur(20px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
-      margin-left: 10px;
+      margin-left: 12px;
+      font-weight: 600;
     }
 
     .search-effects-btn:hover {
-      background: rgba(102, 126, 234, 0.8);
-      border-color: #667eea;
-      transform: scale(1.1);
+      background: rgba(0, 212, 0, 0.9);
+      border-color: #00D400;
+      color: #000000;
+      transform: scale(1.05);
     }
 
-    /* Modal de búsqueda de efectos */
+    /* Modal de búsqueda de efectos - Estilo Uber */
     .effects-search-modal {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.95);
+      background: rgba(0, 0, 0, 0.98);
       z-index: 1000;
       display: none;
       flex-direction: column;
@@ -600,52 +638,56 @@
     }
 
     .search-header {
-      padding: 20px;
+      padding: 24px;
       display: flex;
       align-items: center;
-      gap: 15px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      gap: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .search-close-btn {
-      background: none;
+      background: rgba(255, 255, 255, 0.08);
       border: none;
-      color: #fff;
+      color: #ffffff;
       font-size: 20px;
       cursor: pointer;
-      padding: 10px;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
+      padding: 12px;
+      border-radius: 12px;
+      width: 48px;
+      height: 48px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 600;
     }
 
     .search-close-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.12);
     }
 
     .search-input {
       flex: 1;
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.08);
       border: none;
-      border-radius: 25px;
-      padding: 12px 20px;
-      color: #fff;
+      border-radius: 16px;
+      padding: 16px 24px;
+      color: #ffffff;
       font-size: 16px;
       outline: none;
+      font-family: 'Inter', sans-serif;
+      font-weight: 400;
+      letter-spacing: -0.3px;
     }
 
     .search-input::placeholder {
-      color: rgba(255, 255, 255, 0.7);
+      color: rgba(255, 255, 255, 0.5);
     }
 
     .search-categories {
-      padding: 20px;
+      padding: 24px;
       display: flex;
-      gap: 10px;
+      gap: 12px;
       overflow-x: auto;
       scrollbar-width: none;
     }
@@ -655,66 +697,71 @@
     }
 
     .category-btn {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.08);
       border: none;
-      color: rgba(255, 255, 255, 0.8);
-      padding: 8px 16px;
-      border-radius: 20px;
+      color: rgba(255, 255, 255, 0.7);
+      padding: 12px 20px;
+      border-radius: 12px;
       font-size: 14px;
       white-space: nowrap;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: -0.3px;
     }
 
     .category-btn.active,
     .category-btn:hover {
-      background: #667eea;
-      color: #fff;
+      background: #00D400;
+      color: #000000;
     }
 
     .effects-grid {
       flex: 1;
-      padding: 20px;
+      padding: 24px;
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 15px;
+      gap: 16px;
       overflow-y: auto;
     }
 
     .effect-item {
       aspect-ratio: 1;
-      border-radius: 15px;
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      background: rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(10px);
-      color: #fff;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(20px);
+      color: #ffffff;
       text-align: center;
       font-size: 12px;
       font-weight: 600;
-      padding: 8px;
+      padding: 12px;
       position: relative;
+      font-family: 'Inter', sans-serif;
     }
 
     .effect-item:hover {
-      border-color: #667eea;
-      background: rgba(102, 126, 234, 0.2);
+      border-color: #00D400;
+      background: rgba(0, 212, 0, 0.1);
       transform: scale(1.05);
     }
 
     .effect-item.selected {
-      border-color: #667eea;
-      background: rgba(102, 126, 234, 0.3);
+      border-color: #00D400;
+      background: rgba(0, 212, 0, 0.2);
     }
 
     .effect-icon {
       font-size: 24px;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
+      font-weight: 700;
     }
 
     .effect-name {
@@ -723,40 +770,43 @@
       overflow: hidden;
       white-space: nowrap;
       width: 100%;
-      margin-bottom: 3px;
+      margin-bottom: 4px;
+      letter-spacing: -0.2px;
     }
 
     .effect-usage {
       position: absolute;
-      top: 5px;
-      right: 5px;
-      background: rgba(255, 0, 0, 0.8);
-      color: #fff;
+      top: 8px;
+      right: 8px;
+      background: rgba(255, 48, 64, 0.9);
+      color: #ffffff;
       font-size: 8px;
-      padding: 2px 6px;
-      border-radius: 10px;
-      font-weight: bold;
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-weight: 700;
     }
 
     .filter-btn {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      border: 2px solid rgba(255, 255, 255, 0.5);
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
       background-position: center;
       background-size: cover;
-      color: #fff;
+      color: #ffffff;
       font-size: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      backdrop-filter: blur(10px);
-      transition: all 0.3s ease;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(20px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
       position: relative;
       overflow: hidden;
       cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
     }
 
     .filter-btn::before {
@@ -768,73 +818,82 @@
       bottom: 0;
       background: rgba(0, 0, 0, 0.3);
       z-index: 1;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .filter-btn span {
       position: relative;
       z-index: 2;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: -0.3px;
     }
 
     .filter-btn.active {
-      border-color: #667eea;
-      transform: scale(1.1);
-      box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+      border-color: #00D400;
+      transform: scale(1.05);
+      box-shadow: 0 8px 25px rgba(0, 212, 0, 0.4);
+    }
+
+    .filter-btn.active::before {
+      background: rgba(0, 212, 0, 0.2);
     }
 
     .filter-usage {
       position: absolute;
-      top: -5px;
-      right: -5px;
-      background: rgba(255, 0, 0, 0.9);
-      color: #fff;
+      top: -8px;
+      right: -8px;
+      background: rgba(255, 48, 64, 0.95);
+      color: #ffffff;
       font-size: 8px;
-      padding: 2px 5px;
-      border-radius: 8px;
-      font-weight: bold;
+      padding: 4px 8px;
+      border-radius: 10px;
+      font-weight: 700;
       z-index: 3;
+      font-family: 'Inter', sans-serif;
     }
 
-    /* Efectos visuales */
+    /* Efectos visuales - Estilo Uber */
     .flash-effect {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: #fff;
+      background: #ffffff;
       opacity: 0;
       z-index: 1000;
       pointer-events: none;
     }
 
     .flash-effect.active {
-      animation: flashAnimation 0.2s ease;
+      animation: uberFlashAnimation 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    @keyframes flashAnimation {
+    @keyframes uberFlashAnimation {
       0% { opacity: 0; }
-      50% { opacity: 0.8; }
+      50% { opacity: 0.9; }
       100% { opacity: 0; }
     }
 
-    /* Indicador de cronómetro activo */
+    /* Indicador de cronómetro activo - Estilo Uber */
     .timer-indicator {
       position: fixed;
-      top: 80px;
-      right: 20px;
-      background: rgba(255, 0, 80, 0.9);
-      color: #fff;
-      padding: 8px 15px;
-      border-radius: 20px;
+      top: 84px;
+      right: 24px;
+      background: rgba(0, 212, 0, 0.95);
+      color: #000000;
+      padding: 12px 20px;
+      border-radius: 16px;
       font-size: 12px;
       font-weight: 700;
       display: none;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       backdrop-filter: blur(20px);
       z-index: 100;
-      animation: fadeInDown 0.3s ease;
+      animation: uberFadeInDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: 'Inter', sans-serif;
+      letter-spacing: -0.3px;
     }
 
     .timer-indicator.active {
@@ -842,56 +901,95 @@
     }
 
     .timer-indicator i {
-      animation: blink 1s infinite;
+      animation: uberBlink 1s infinite;
     }
 
-    @keyframes gradientShift {
+    @keyframes uberGradientShift {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
 
-    /* Media queries para responsive */
+    /* Media queries para responsive - Estilo Uber */
     @media (max-width: 480px) {
       .app-logo {
-        font-size: 3rem;
+        font-size: 3.5rem;
       }
 
       .app-subtitle {
         font-size: 1rem;
-        padding: 0 20px;
+        padding: 0 24px;
       }
 
       .new-project-btn {
-        padding: 15px 30px;
+        padding: 16px 32px;
         font-size: 1rem;
       }
 
       .header {
-        padding: 0 15px;
+        padding: 0 20px;
       }
 
       .controls-main {
-        gap: 20px;
+        gap: 24px;
       }
 
       #captureButton {
-        width: 70px;
-        height: 70px;
+        width: 76px;
+        height: 76px;
       }
 
       .capture-inner {
-        width: 50px;
-        height: 50px;
+        width: 56px;
+        height: 56px;
       }
 
       .filters-container {
-        padding: 0 15px;
+        padding: 0 20px;
       }
 
       .countdown-number {
-        font-size: 40px;
+        font-size: 48px;
       }
+    }
+
+    /* Efectos adicionales estilo Uber */
+    .effect-3d-btn {
+      background: linear-gradient(135deg, #00D400 0%, #00B400 50%, #009400 100%) !important;
+      background-size: 200% 200% !important;
+      animation: uberGradientShift 3s ease infinite !important;
+      border-color: #00D400 !important;
+    }
+
+    .effect-3d-btn span {
+      color: #000000 !important;
+      font-weight: 900 !important;
+      text-shadow: none !important;
+    }
+
+    .effect-3d-btn:hover {
+      transform: scale(1.08) !important;
+      box-shadow: 0 8px 32px rgba(0, 212, 0, 0.5) !important;
+    }
+
+    /* Scrollbars personalizados estilo Uber */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 212, 0, 0.6);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 212, 0, 0.8);
     }
   </style>
 </head>
@@ -1611,12 +1709,9 @@
       const btn = document.createElement('button');
       btn.classList.add('filter-btn', 'effect-3d-btn');
       btn.dataset.effectId = effectId;
-      btn.style.background = 'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1)';
-      btn.style.backgroundSize = '200% 200%';
-      btn.style.animation = 'gradientShift 3s ease infinite';
 
       btn.innerHTML = `
-        <span style="font-weight: bold; text-shadow: 0 0 10px rgba(255,255,255,0.8);">${effectData.name}</span>
+        <span style="font-weight: bold;">${effectData.name}</span>
         <div class="filter-usage" id="usage-${effectId}">0</div>
       `;
 
