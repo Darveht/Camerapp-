@@ -59,7 +59,7 @@ effect_manager = EffectManager()
 
 @app.route("/")
 def index():
-    with open('src/index.html', 'r') as f:
+    with open('index.html', 'r') as f:
       template = f.read()
     
     effect_manager.add_effect('snow','<div id="snow"></div>')
