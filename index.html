@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -870,7 +869,7 @@
     }
 
     @keyframes uberFlashAnimation {
-      0% { opacity: 0; }
+      0% { opacity: 0;}
       50% { opacity: 0.9; }
       100% { opacity: 0; }
     }
@@ -1098,7 +1097,7 @@
         </button>
         <input type="text" class="search-input" id="searchInput" placeholder="Buscar efectos y filtros...">
       </div>
-      
+
       <div class="search-categories" id="searchCategories">
         <button class="category-btn active" data-category="all">Todos</button>
         <button class="category-btn" data-category="artistic">Artísticos</button>
@@ -1108,7 +1107,7 @@
         <button class="category-btn" data-category="dramatic">Dramáticos</button>
         <button class="category-btn" data-category="3d">Efectos 3D</button>
       </div>
-      
+
       <div class="effects-grid" id="effectsGrid">
         <!-- Efectos se cargan dinámicamente -->
       </div>
@@ -1218,7 +1217,7 @@
     // Inicializar Three.js para efectos 3D
     function initializeThreeJS() {
       scene = new THREE.Scene();
-      
+
       camera3d = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
       camera3d.position.z = 5;
 
@@ -1241,12 +1240,12 @@
     function onFaceDetectionResults(results) {
       if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
         const landmarks = results.multiFaceLandmarks[0];
-        
+
         if (current3DEffect) {
           update3DEffect(landmarks);
         }
       }
-      
+
       if (renderer && scene && camera3d) {
         renderer.render(scene, camera3d);
       }
@@ -1552,11 +1551,11 @@
         });
 
         const positions = getEffectPositions(landmarks, geometria.targetPoints || ['left_ear', 'right_ear']);
-        
+
         positions.forEach((pos, index) => {
           const mesh = new THREE.Mesh(geometry.clone(), material.clone());
           mesh.position.set(pos.x, pos.y, pos.z);
-          
+
           if (geometria.rotation) {
             mesh.rotation.set(
               geometria.rotation.x || 0,
@@ -1564,7 +1563,7 @@
               geometria.rotation.z || 0
             );
           }
-          
+
           if (geometria.scale) {
             mesh.scale.set(
               geometria.scale.x || 1,
@@ -1667,11 +1666,11 @@
             geometria: effect.geometria
           };
         });
-        
+
         if (document.getElementById('effectsSearchModal').classList.contains('active')) {
           loadEffectsGrid();
         }
-        
+
         updateFiltersPanel();
       }
     }
@@ -1691,10 +1690,10 @@
     // Actualizar panel de filtros para incluir efectos 3D
     function updateFiltersPanel() {
       const container = document.getElementById('filtersContainer');
-      
+
       Object.keys(effectsDatabase).forEach(effectId => {
         const effect = effectsDatabase[effectId];
-        
+
         if (effect.category === '3d') {
           if (!document.querySelector(`[data-effect-id="${effectId}"]`)) {
             const btn = create3DEffectButton(effectId, effect);
@@ -1718,7 +1717,7 @@
       btn.addEventListener('click', () => {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        
+
         if (effectData.effect3d) {
           toggle3DEffect(effectData.effect3d, effectData.geometria);
         }
@@ -1730,7 +1729,7 @@
     // Cargar filtros desde Firebase - CORREGIDO para incluir en búsqueda
     function loadFiltersFromFirebase(data) {
       const container = document.getElementById('filtersContainer');
-      
+
       // Limpiar solo los filtros CSS, no los efectos 3D
       const cssFilters = container.querySelectorAll('.filter-btn:not(.effect-3d-btn)');
       cssFilters.forEach(btn => btn.remove());
@@ -1746,11 +1745,11 @@
       if (data) {
         Object.keys(data).forEach(filterId => {
           const filterData = data[filterId];
-          
+
           // Agregar al panel de filtros
           const btn = createFilterButton(filterId, filterData);
           container.appendChild(btn);
-          
+
           // IMPORTANTE: También agregar a la base de datos de efectos para la búsqueda
           effectsDatabase[filterId] = {
             name: filterData.nombre,
@@ -1759,7 +1758,7 @@
             icon: filterData.nombre.substring(0, 3).toUpperCase()
           };
         });
-        
+
         // Actualizar grid de búsqueda si está abierto
         if (document.getElementById('effectsSearchModal').classList.contains('active')) {
           loadEffectsGrid();
@@ -1802,7 +1801,7 @@
         btn.classList.add('active');
         currentFilterCss = filterData.css || 'none';
         applyFilter();
-        
+
         if (filterId !== 'none') {
           incrementEffectUsage(filterId);
         }
@@ -1854,7 +1853,7 @@
         const item = document.createElement('div');
         item.classList.add('effect-item');
         item.dataset.effectId = effectId;
-        
+
         if ((currentFilterCss === effect.css && effect.css) || 
             (current3DEffect === effect.effect3d && effect.effect3d)) {
           item.classList.add('selected');
@@ -1870,9 +1869,9 @@
           document.querySelectorAll('.effect-item').forEach(el => el.classList.remove('selected'));
           document.querySelectorAll('.filter-btn').forEach(el => el.classList.remove('active'));
           document.querySelectorAll('.effect-3d-btn').forEach(el => el.classList.remove('active'));
-          
+
           item.classList.add('selected');
-          
+
           if (effect.effect3d) {
             current3DEffect = effect.effect3d;
             currentEffectGeometry = effect.geometria;
@@ -1881,9 +1880,9 @@
             currentFilterCss = effect.css;
             applyFilter();
           }
-          
+
           incrementEffectUsage(effectId);
-          
+
           setTimeout(() => {
             closeEffectsSearch();
           }, 500);
@@ -1947,13 +1946,13 @@
     // Flash disponible en cámara trasera principalmente
     async function checkAutoFlash() {
       const flashBtn = document.getElementById('flash');
-      
+
       if (facingMode === 'environment') {
         flashBtn.style.display = 'flex';
         if (currentStream) {
           const track = currentStream.getVideoTracks()[0];
           const capabilities = track.getCapabilities();
-          
+
           if (capabilities.torch) {
             flashBtn.style.opacity = '1';
             flashBtn.disabled = false;
@@ -1975,7 +1974,7 @@
     async function initCamera() {
       try {
         const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
+
         const constraints = {
           video: { 
             facingMode: facingMode,
@@ -2008,7 +2007,7 @@
 
       } catch (err) {
         console.error('Error al acceder a la cámara:', err);
-        
+
         try {
           const basicConstraints = {
             video: { facingMode: facingMode },
@@ -2032,7 +2031,7 @@
         let finalStream = currentStream;
 
         let options = {};
-        
+
         if (MediaRecorder.isTypeSupported('video/mp4')) {
           options.mimeType = 'video/mp4';
         } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
@@ -2100,13 +2099,13 @@
     // Flash
     document.getElementById('flash').addEventListener('click', async () => {
       if (document.getElementById('flash').disabled) return;
-      
+
       flashEnabled = !flashEnabled;
       document.getElementById('flash').classList.toggle('active', flashEnabled);
 
       if (currentStream) {
         const track = currentStream.getVideoTracks()[0];
-        
+
         if (facingMode === 'environment') {
           try {
             await track.applyConstraints({ 
@@ -2179,7 +2178,7 @@
       const file = e.target.files[0];
       if (file && file.type.startsWith('audio/')) {
         initializeAudio();
-        
+
         currentMusicFile = file;
         const url = URL.createObjectURL(file);
         backgroundMusicElement.src = url;
@@ -2192,7 +2191,7 @@
         musicTitle.textContent = file.name.replace(/\.[^/.]+$/, "");
         document.getElementById('musicPlay').style.display = 'flex';
         musicUploadBtn.classList.add('active');
-        
+
         musicInfo.classList.add('active');
         setTimeout(() => {
           musicInfo.classList.remove('active');
@@ -2240,7 +2239,7 @@
     captureButton.addEventListener('touchstart', handleTouchStart, { passive: false });
     captureButton.addEventListener('touchend', handleTouchEnd, { passive: false });
     captureButton.addEventListener('touchcancel', handleTouchEnd, { passive: false });
-    
+
     captureButton.addEventListener('mousedown', handleMouseStart);
     captureButton.addEventListener('mouseup', handleMouseEnd);
     captureButton.addEventListener('mouseleave', handleMouseEnd);
@@ -2248,7 +2247,7 @@
     function handleTouchStart(e) {
       e.preventDefault();
       e.stopPropagation();
-      
+
       touchStartTime = Date.now();
       isLongPress = false;
 
@@ -2271,7 +2270,7 @@
     function handleTouchEnd(e) {
       e.preventDefault();
       e.stopPropagation();
-      
+
       if (longPressTimer) {
         clearTimeout(longPressTimer);
         longPressTimer = null;
@@ -2288,7 +2287,7 @@
           });
         }
       }
-      
+
       isLongPress = false;
     }
 
@@ -2352,11 +2351,11 @@
 
       if (backgroundMusic && backgroundMusicElement.src) {
         initializeAudio();
-        
+
         backgroundMusicElement.currentTime = 0;
         backgroundMusicElement.volume = 0.7;
         backgroundMusicElement.muted = false;
-        
+
         backgroundMusicElement.play().then(() => {
           musicPlaying = true;
           document.getElementById('musicPlay').innerHTML = '<i class="fas fa-pause"></i>';
@@ -2405,10 +2404,19 @@
 
     // Efectos visuales
     function showFlashEffect() {
+      const flashEffect = document.getElementById('flashEffect');
+      flashEffect.style.opacity = '0.9';
       flashEffect.classList.add('active');
+
+      // Efecto más suave y realista
       setTimeout(() => {
+        flashEffect.style.opacity = '0.4';
+      }, 50);
+
+      setTimeout(() => {
+        flashEffect.style.opacity = '0';
         flashEffect.classList.remove('active');
-      }, 200);
+      }, 150);
     }
 
     // Utilidades
@@ -2478,12 +2486,12 @@
       initializeThreeJS();
       initializeFaceDetection();
       setupRealtimeSync();
-      
+
       setTimeout(() => {
         updateFiltersPanel();
         loadEffectsGrid();
       }, 1000);
-      
+
       document.addEventListener('touchstart', initializeAudio, { once: true });
       document.addEventListener('click', initializeAudio, { once: true });
     });
