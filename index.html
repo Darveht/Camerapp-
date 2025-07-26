@@ -837,19 +837,7 @@
       background: rgba(0, 212, 0, 0.2);
     }
 
-    .filter-usage {
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      background: rgba(255, 48, 64, 0.95);
-      color: #ffffff;
-      font-size: 8px;
-      padding: 4px 8px;
-      border-radius: 10px;
-      font-weight: 700;
-      z-index: 3;
-      font-family: 'Inter', sans-serif;
-    }
+    
 
     /* Efectos visuales - Estilo Uber */
     .flash-effect {
@@ -1709,10 +1697,7 @@
       btn.classList.add('filter-btn', 'effect-3d-btn');
       btn.dataset.effectId = effectId;
 
-      btn.innerHTML = `
-        <span style="font-weight: bold;">${effectData.name}</span>
-        <div class="filter-usage" id="usage-${effectId}">0</div>
-      `;
+      btn.innerHTML = `<span style="font-weight: bold;">${effectData.name}</span>`;
 
       btn.addEventListener('click', () => {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -1779,7 +1764,7 @@
       return categoryMap[firebaseCategory] || 'artistic';
     }
 
-    // Crear botón de filtro con contador de uso
+    // Crear botón de filtro sin contador de uso
     function createFilterButton(filterId, filterData) {
       const btn = document.createElement('button');
       btn.classList.add('filter-btn');
@@ -1791,20 +1776,13 @@
         btn.style.backgroundColor = '#333';
       }
 
-      btn.innerHTML = `
-        <span>${filterData.nombre}</span>
-        <div class="filter-usage" id="usage-${filterId}">0</div>
-      `;
+      btn.innerHTML = `<span>${filterData.nombre}</span>`;
 
       btn.addEventListener('click', () => {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentFilterCss = filterData.css || 'none';
         applyFilter();
-
-        if (filterId !== 'none') {
-          incrementEffectUsage(filterId);
-        }
       });
 
       return btn;
@@ -1862,7 +1840,6 @@
         item.innerHTML = `
           <div class="effect-icon">${effect.icon}</div>
           <div class="effect-name">${effect.name}</div>
-          <div class="effect-usage" id="usage-search-${effectId}">0</div>
         `;
 
         item.addEventListener('click', () => {
@@ -1964,9 +1941,10 @@
           }
         }
       } else {
-        flashBtn.style.display = 'flex';
-        flashBtn.style.opacity = '0.7';
-        flashBtn.disabled = false;
+        // Ocultar completamente el flash en modo selfie
+        flashBtn.style.display = 'none';
+        flashEnabled = false;
+        flashBtn.classList.remove('active');
       }
     }
 
