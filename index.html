@@ -1428,7 +1428,7 @@
         current3DEffect = null;
         faceObjects.forEach(obj => scene.remove(obj));
         faceObjects = [];
-        showNotification('Efecto 3D desactivado');
+        
       } else {
         // Activar nuevo efecto
         current3DEffect = effectName;
@@ -1437,7 +1437,7 @@
         // Incrementar contador de uso
         incrementEffectUsage('3d_' + effectName);
         
-        showNotification(`Efecto 3D: ${effectName} activado`);
+        
       }
     }
 
@@ -1552,7 +1552,7 @@
           toggle3DEffect(effectData.effect3d, effectData.geometria);
         }
         
-        showNotification(`✨ Efecto 3D "${effectData.name}" aplicado`);
+        
       });
 
       return btn;
@@ -1607,7 +1607,7 @@
           incrementEffectUsage(filterId);
         }
         
-        showNotification(`Filtro "${filterData.nombre}" aplicado`);
+        
       });
 
       return btn;
@@ -1631,45 +1631,10 @@
       });
     }
 
-    // Base de datos expandida de efectos sin emojis
+    // Base de datos de efectos - se cargan desde Firebase
     const effectsDatabase = {
-      // Filtros básicos
-      'none': { name: 'Original', css: 'none', category: 'basic', icon: 'O' },
-      'sepia': { name: 'Sepia', css: 'sepia(100%)', category: 'vintage', icon: 'S' },
-      'grayscale': { name: 'B&N', css: 'grayscale(100%)', category: 'artistic', icon: 'G' },
-      'contrast': { name: 'Contraste', css: 'contrast(150%)', category: 'dramatic', icon: 'C' },
-      'brightness': { name: 'Brillo', css: 'brightness(150%)', category: 'color', icon: 'B' },
-      'blur': { name: 'Desenfoque', css: 'blur(5px)', category: 'artistic', icon: 'D' },
-      'vintage': { name: 'Vintage', css: 'sepia(80%) hue-rotate(-20deg)', category: 'vintage', icon: 'V' },
-      'warm': { name: 'Cálido', css: 'saturate(150%) hue-rotate(10deg)', category: 'color', icon: 'W' },
-      'cold': { name: 'Frío', css: 'saturate(140%) hue-rotate(-10deg)', category: 'color', icon: 'F' },
-      'dreamy': { name: 'Soñador', css: 'sepia(50%) hue-rotate(10deg) contrast(110%)', category: 'artistic', icon: 'DR' },
-      'retro': { name: 'Retro', css: 'grayscale(50%) contrast(120%)', category: 'vintage', icon: 'R' },
-      'cinema': { name: 'Cinema', css: 'contrast(130%) sepia(30%)', category: 'dramatic', icon: 'CI' },
-      'sunset': { name: 'Atardecer', css: 'sepia(70%) contrast(120%) hue-rotate(-10deg)', category: 'color', icon: 'SU' },
-      'dramatic': { name: 'Dramático', css: 'contrast(140%) saturate(150%)', category: 'dramatic', icon: 'DM' },
-      
-      // Efectos adicionales
-      'neon': { name: 'Neón', css: 'saturate(200%) contrast(150%) hue-rotate(90deg)', category: 'fun', icon: 'N' },
-      'cyberpunk': { name: 'Cyberpunk', css: 'saturate(180%) contrast(130%) hue-rotate(270deg)', category: 'fun', icon: 'CP' },
-      'pastel': { name: 'Pastel', css: 'saturate(80%) brightness(120%) contrast(90%)', category: 'artistic', icon: 'P' },
-      'noir': { name: 'Noir', css: 'grayscale(100%) contrast(150%) brightness(90%)', category: 'dramatic', icon: 'NO' },
-      'tropical': { name: 'Tropical', css: 'saturate(160%) hue-rotate(30deg) brightness(110%)', category: 'color', icon: 'T' },
-      'arctic': { name: 'Ártico', css: 'saturate(120%) hue-rotate(-30deg) brightness(120%)', category: 'color', icon: 'A' },
-      'golden': { name: 'Dorado', css: 'sepia(60%) saturate(140%) hue-rotate(20deg)', category: 'vintage', icon: 'GO' },
-      'forest': { name: 'Bosque', css: 'saturate(130%) hue-rotate(80deg) contrast(110%)', category: 'color', icon: 'FO' },
-      'ocean': { name: 'Océano', css: 'saturate(140%) hue-rotate(180deg) contrast(105%)', category: 'color', icon: 'OC' },
-      'fire': { name: 'Fuego', css: 'saturate(170%) hue-rotate(-20deg) contrast(120%)', category: 'dramatic', icon: 'FI' },
-      
-      // Efectos 3D
-      '3d_dogEars': { name: 'Orejas Perro', css: '', category: '3d', icon: 'DOG', effect3d: 'dogEars' },
-      '3d_catEars': { name: 'Orejas Gato', css: '', category: '3d', icon: 'CAT', effect3d: 'catEars' },
-      '3d_bunnyEars': { name: 'Orejas Conejo', css: '', category: '3d', icon: 'BUN', effect3d: 'bunnyEars' },
-      '3d_heartEyes': { name: 'Ojos Corazón', css: '', category: '3d', icon: 'HRT', effect3d: 'heartEyes' },
-      '3d_crown': { name: 'Corona Real', css: '', category: '3d', icon: 'CRW', effect3d: 'crown' },
-      '3d_glasses': { name: 'Lentes', css: '', category: '3d', icon: 'GLS', effect3d: 'glasses' },
-      '3d_mustache': { name: 'Bigote', css: '', category: '3d', icon: 'MST', effect3d: 'mustache' },
-      '3d_unicornHorn': { name: 'Cuerno Unicornio', css: '', category: '3d', icon: 'UNI', effect3d: 'unicornHorn' }
+      // Solo filtro original por defecto
+      'none': { name: 'Original', css: 'none', category: 'basic', icon: 'O' }
     };
 
     // Variables para búsqueda
@@ -1727,7 +1692,7 @@
           // Incrementar contador de uso
           incrementEffectUsage(effectId);
           
-          showNotification(`✨ Efecto "${effect.name}" aplicado`);
+          
           
           // Cerrar modal después de un breve delay
           setTimeout(() => {
@@ -1856,11 +1821,11 @@
         // Iniciar procesamiento de video para detección facial
         processVideoFrame();
         
-        showNotification(`📷 Cámara ${facingMode === 'environment' ? 'trasera' : 'frontal'} lista`);
+        
 
       } catch (err) {
         console.error('Error al acceder a la cámara:', err);
-        showNotification('❌ Error al acceder a la cámara: ' + err.message);
+        
         
         try {
           const basicConstraints = {
@@ -1872,10 +1837,10 @@
           if (currentMode === 'video') {
             setTimeout(() => setupMediaRecorder(), 500);
           }
-          showNotification('📷 Cámara iniciada (modo básico)');
+          
         } catch (basicErr) {
           console.error('Error con configuración básica:', basicErr);
-          showNotification('❌ No se puede acceder a la cámara');
+          
         }
       }
     }
@@ -1914,7 +1879,6 @@
         };
 
         mediaRecorder.onstart = () => {
-          showNotification('📹 Grabación iniciada');
         };
 
         mediaRecorder.onstop = () => {
@@ -1923,15 +1887,15 @@
             const blob = new Blob(recordedChunks, { type: mimeType });
             const extension = mimeType.includes('mp4') ? '.mp4' : '.webm';
             downloadFile(blob, 'video_' + new Date().getTime() + extension);
-            showNotification('✅ Video guardado');
+            
           } else {
-            showNotification('❌ Error: No se grabó contenido');
+            
           }
           recordedChunks = [];
         };
 
         mediaRecorder.onerror = (event) => {
-          showNotification('❌ Error al grabar: ' + event.error.name);
+          
         };
       }
     }
@@ -1978,18 +1942,14 @@
             await track.applyConstraints({ 
               advanced: [{ torch: flashEnabled }] 
             });
-            showNotification(flashEnabled ? 'Flash activado' : 'Flash desactivado');
+            
           } catch (err) {
             flashEnabled = false;
             document.getElementById('flash').classList.remove('active');
-            showNotification('Flash no disponible en este dispositivo');
+            
           }
         } else {
-          if (flashEnabled) {
-            showNotification('Flash de pantalla activado');
-          } else {
-            showNotification('Flash de pantalla desactivado');
-          }
+          
         }
       }
     });
@@ -1998,7 +1958,7 @@
     document.getElementById('gridToggle').addEventListener('click', () => {
       document.getElementById('gridToggle').classList.toggle('active');
       gridOverlay.classList.toggle('active');
-      showNotification(gridOverlay.classList.contains('active') ? 'Cuadrícula activada' : 'Cuadrícula desactivada');
+      
     });
 
     // Cronómetro toggle
@@ -2016,12 +1976,12 @@
       if (countdownTime === 0) {
         timerBtn.classList.remove('active');
         timerIndicator.classList.remove('active');
-        showNotification('Cronómetro desactivado');
+        
       } else {
         timerBtn.classList.add('active');
         timerIndicator.classList.add('active');
         timerIndicatorText.textContent = `${countdownTime}s`;
-        showNotification(`Cronómetro: ${countdownTime}s`);
+        
       }
     });
 
@@ -2075,7 +2035,7 @@
           musicInfo.classList.remove('active');
         }, 4000);
 
-        showNotification('✅ Música cargada correctamente');
+        
       }
     });
 
@@ -2214,7 +2174,7 @@
 
       playShutterSound();
       showFlashEffect();
-      showNotification('Foto guardada');
+      
 
       captureButton.style.transform = 'scale(0.9)';
       setTimeout(() => { captureButton.style.transform = 'scale(1)'; }, 150);
@@ -2241,16 +2201,16 @@
         backgroundMusicElement.play().then(() => {
           musicPlaying = true;
           document.getElementById('musicPlay').innerHTML = '<i class="fas fa-pause"></i>';
-          showNotification('🎵 Grabando con música');
+          
         }).catch((err) => {
           setTimeout(() => {
             backgroundMusicElement.play().catch(() => {
-              showNotification('⚠️ Grabando sin música');
+              
             });
           }, 100);
         });
       } else {
-        showNotification('📹 Grabando video');
+        
       }
 
       mediaRecorder.start();
@@ -2279,7 +2239,7 @@
 
       clearInterval(timerInterval);
       playStopRecordingSound();
-      showNotification('Video guardado');
+      
     }
 
     // Actualizar timer
@@ -2299,11 +2259,7 @@
     }
 
     function showNotification(message) {
-      notification.textContent = message;
-      notification.classList.add('show');
-      setTimeout(() => {
-        notification.classList.remove('show');
-      }, 3000);
+      // Notificaciones deshabilitadas por solicitud del usuario
     }
 
     // Utilidades
