@@ -837,7 +837,7 @@
       background: rgba(0, 212, 0, 0.2);
     }
 
-    
+
 
     /* Efectos visuales - Estilo Uber */
     .flash-effect {
@@ -1147,6 +1147,7 @@
     let faceMesh = null;
     let scene, camera3d, renderer;
     let faceObjects = [];
+    let captureCanvas, captureContext;
 
     // Elementos DOM
     const camera = document.getElementById('camera');
@@ -1163,6 +1164,7 @@
     const musicInfo = document.getElementById('musicInfo');
     const musicTitle = document.getElementById('musicTitle');
     const effects3dCanvas = document.getElementById('effects3d');
+    const canvas = document.getElementById('canvas');
 
     // Control de navegación
     document.getElementById('newProjectBtn').addEventListener('click', () => {
@@ -1948,6 +1950,14 @@
       }
     }
 
+    // Inicializar canvas de captura
+    function initializeCaptureCanvas() {
+      captureCanvas = document.createElement('canvas');
+      captureContext = captureCanvas.getContext('2d');
+      captureCanvas.width = camera.videoWidth;
+      captureCanvas.height = camera.videoHeight;
+    }
+
     // Inicializar cámara con mejor compatibilidad móvil
     async function initCamera() {
       try {
@@ -1974,11 +1984,17 @@
         currentStream = await navigator.mediaDevices.getUserMedia(constraints);
         camera.srcObject = currentStream;
 
-        if (currentMode === 'video') {
-          setTimeout(() => {
-            setupMediaRecorder();
-          }, 500);
-        }
+        // Inicializar canvas de captura
+        initializeCaptureCanvas();
+
+        // Esperar a que el video esté listo
+        camera.addEventListener('loadedmetadata', () => {
+          if (currentMode === 'video') {
+            setTimeout(() => {
+              setupMediaRecorder();
+            }, 500);
+          }
+        });
 
         await checkAutoFlash();
         processVideoFrame();
@@ -1993,6 +2009,9 @@
           };
           currentStream = await navigator.mediaDevices.getUserMedia(basicConstraints);
           camera.srcObject = currentStream;
+
+          initializeCaptureCanvas();
+
           if (currentMode === 'video') {
             setTimeout(() => setupMediaRecorder(), 500);
           }
@@ -2007,6 +2026,37 @@
       if (currentStream && currentMode === 'video') {
         recordedChunks = [];
         let finalStream = currentStream;
+
+        // Create audio context and source
+        const audioContext = new AudioContext();
+        const source = audioContext.createMediaStreamSource(currentStream);
+
+        // Create gain nodes for microphone and background music
+        const microphoneGain = audioContext.createGain();
+        const musicGain = audioContext.createGain();
+
+        // Connect microphone and music to gain nodes
+        source.connect(microphoneGain);
+        if (backgroundMusicElement.src) {
+            const musicSource = audioContext.createMediaElementSource(backgroundMusicElement);
+            musicSource.connect(musicGain);
+        }
+
+        // Create a destination stream for recording
+        const destination = audioContext.createMediaStreamDestination();
+
+        // Connect gain nodes to destination
+        microphoneGain.connect(destination);
+        musicGain.connect(destination);
+
+        // Set gain values (adjust as needed)
+        microphoneGain.gain.value = 1; // Full volume for microphone
+        musicGain.gain.value = 0.7; // Reduce music volume
+
+        // Combine audio and video tracks
+        let combinedStream = new MediaStream();
+        currentStream.getVideoTracks().forEach(track => combinedStream.addTrack(track));
+        destination.stream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
 
         let options = {};
 
@@ -2024,9 +2074,9 @@
         options.audioBitsPerSecond = 128000;
 
         try {
-          mediaRecorder = new MediaRecorder(finalStream, options);
+          mediaRecorder = new MediaRecorder(combinedStream, options);
         } catch (error) {
-          mediaRecorder = new MediaRecorder(finalStream);
+          mediaRecorder = new MediaRecorder(combinedStream);
         }
 
         mediaRecorder.ondataavailable = (event) => {
@@ -2293,20 +2343,20 @@
 
     // Tomar foto
     function takePhoto() {
-      const canvas = document.getElementById('canvas');
-      canvas.width = camera.videoWidth;
-      canvas.height = camera.videoHeight;
-      const context = canvas.getContext('2d');
+      captureCanvas.width = camera.videoWidth;
+      captureCanvas.height = camera.videoHeight;
 
-      context.filter = window.getComputedStyle(camera).filter;
-      context.drawImage(camera, 0, 0, canvas.width, canvas.height);
+      // Apply CSS filters from the camera
+      captureContext.filter = window.getComputedStyle(camera).filter;
+      captureContext.drawImage(camera, 0, 0, captureCanvas.width, captureCanvas.height);
 
+      // Apply 3D effects if available
       if (current3DEffect && renderer) {
         const canvas3d = renderer.domElement;
-        context.drawImage(canvas3d, 0, 0, canvas.width, canvas.height);
+        captureContext.drawImage(canvas3d, 0, 0, captureCanvas.width, captureCanvas.height);
       }
 
-      const image = canvas.toDataURL('image/jpeg', 0.95);
+      const image = captureCanvas.toDataURL('image/jpeg', 0.95);
       downloadFile(dataURLtoBlob(image), 'foto_' + new Date().getTime() + '.jpg');
 
       playShutterSound();
@@ -2464,6 +2514,7 @@
       initializeThreeJS();
       initializeFaceDetection();
       setupRealtimeSync();
+      initializeCaptureCanvas();
 
       setTimeout(() => {
         updateFiltersPanel();
